@@ -1,0 +1,19 @@
+
+[DEFAULTS]
+FILE_LOG_COMPLETED = cowrie.completed.json
+FILE_LOG_SESSION = cowrie.session.json
+FILE_LOG_NOSESSION = cowrie.nosession.json
+OUTPUT = output
+BD_GEOIP2 = GeoLite2-City.mmdb
+ELASTIC_IP = 127.0.0.1:9200
+ELASTIC_INDEX = cowrie
+VIRUSTOTAL_API_KEY = 00000000000000000000000000000000000000000000
+
+
+
+[UNITTEST]
+FILE_LOG_COMPLETED = cowrie.completed.json
+FILE_LOG_SESSION = cowrie.session.json
+FILE_LOG_NOSESSION = cowrie.nosession.json
+OUTPUT = testLog
+BD_GEOIP2 = GeoLite2-City.mmdb

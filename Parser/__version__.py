@@ -1,0 +1,10 @@
+__title__ = 'Parser Cowrie'
+__description__ = 'Parser de ficheros de Cowrie generando una salida en multiples formatos (SQL, JSON).'
+__url__ = 'https://github.com/procamora/UM-TFG'
+__version__ = '0.1'
+# __build__ = 0x022100
+__author__ = 'Pablo Rocamora'
+__author_email__ = 'pablojoserocamora@gmail.com'
+__license__ = 'GNU 3.0'
+__copyright__ = 'Copyright 2019 Pablo Rocamora'
+__cake__ = u'\u2728 \U0001f370 \u2728'
