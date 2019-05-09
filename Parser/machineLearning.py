@@ -1,4 +1,3 @@
-
 import numpy
 import pandas as pd
 import json
@@ -36,7 +35,6 @@ from threatLevel import ThreatLevel
 def CreateArgParser():
     """
     Metodo para establecer los argumentos que necesita la clasek
-
     :return:
     """
     config = configparser.ConfigParser()
@@ -82,9 +80,15 @@ def JSONToCSV(workingDir):
     #writer = csv.writer(open(workingDir+'labeled_IdSession.csv','w+'))
     #writer.writerow(["IdSession", "label"])
     #for key, value in label_dict.items():
-        #writer.writerow([key, value])
+    #writer.writerow([key, value])
 
 def getJSON(fileJSON):
+    """
+    Metodo encargado de convertir los ficheros en texto plano a JSON. Ademas, es el metodo
+    encargado de etiquetar los vectores en base a los comandos ejecutados y su threatlevel
+    :param fileJSON:
+    :return:
+    """
     data = []
     with open(fileJSON) as file:
         for line in file:
@@ -118,8 +122,8 @@ def getJSON(fileJSON):
 def createFileCSV(workingDir,withoutextension, dataCompleted, label_dict):
     """
     Metodo encargado de generar un fichero CSV con la estructura acorde a nuestro planteamiento.
-    Tendrá dos columnas: IdSession e input (comandos introducidos en esa sesion).
-    En esta primera prueba no se elimina los flags de los comandos, se pasan todos tal cual.
+    Cada vector estara compuesto por 0's y 1's dependiendo de las acciones que puedan realizar los
+    atacantes con los comandos introducidos.
     :param name:
     :param dataCompleted:
     :param dataSession:
@@ -146,49 +150,44 @@ def createFileCSV(workingDir,withoutextension, dataCompleted, label_dict):
     F_obtencion_informacion = ['cd', 'cat', 'chkconfig', 'echo', 'du', 'df', 'uptime', 'w', 'whoami', 'ifconfig',
                                'netstat', 'last', 'ls', 'ulimit', 'uname', 'history','export','unset', 'set']
 
-    #Generamos fichero .csv
-    #file = csv.writer(open(name, "w+"))
-    # Write CSV Header
-    #file.writerow(["IdSession", "input"])
-
     data_vectors = []
 
     #Solo tiene en cuenta las sesiones con comandos
     for i in dataCompleted:
-            if len(i["listInputs"]) > 0:
-                current_vector = [0,0,0,0,0,0,0,0,0]
-                current_vector[0] = i["IdSession"]
-                for j in range(0,len(i["listInputs"])):
-                    #file.writerow([i["IdSession"],i["listInputs"][j]["input"]])
-                    if (i["listInputs"][j]["input"]!=''):
-                        current_command = i["listInputs"][j]["input"]
-                        #Comprobamos si el comando está dentro de cada feature
-                        if any(substring in current_command for substring in F_leer_disco):
-                            current_vector[1] = 1
-                        if any(substring in current_command for substring in F_escribir_disco):
-                            current_vector[2] = 1
-                        if current_vector == 'history -c' or current_vector == 'history -d':
-                            current_vector[2] = 1
-                        if any(substring in current_command for substring in F_conexiones_internet):
-                            current_vector[3] = 1
-                        if any(substring in current_command for substring in F_instalacion_compilacion_programas):
-                            current_vector[4] = 1
-                        #if any(substring in current_command for substring in F_compilacion_programas):
-                            #current_vector[5] = 1
-                        if any(substring in current_command for substring in F_ejecucion_programas):
-                            current_vector[5] = 1
-                        if any(substring in current_command for substring in F_matar_suspender_procesos):
-                            current_vector[6] = 1
-                        if any(substring in current_command for substring in F_obtencion_informacion):
-                            current_vector[7] = 1
-                        # Si no ha hecho matching con ninguna lista lo ponemos como obtencion de informacion
-                    if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0] and i["listInputs"][j]["input"]!='':
+        if len(i["listInputs"]) > 0:
+            current_vector = [0,0,0,0,0,0,0,0,0]
+            current_vector[0] = i["IdSession"]
+            for j in range(0,len(i["listInputs"])):
+                #file.writerow([i["IdSession"],i["listInputs"][j]["input"]])
+                if (i["listInputs"][j]["input"]!=''):
+                    current_command = i["listInputs"][j]["input"]
+                    #Comprobamos si el comando está dentro de cada feature
+                    if any(substring in current_command for substring in F_leer_disco):
+                        current_vector[1] = 1
+                    if any(substring in current_command for substring in F_escribir_disco):
+                        current_vector[2] = 1
+                    if current_vector == 'history -c' or current_vector == 'history -d':
+                        current_vector[2] = 1
+                    if any(substring in current_command for substring in F_conexiones_internet):
+                        current_vector[3] = 1
+                    if any(substring in current_command for substring in F_instalacion_compilacion_programas):
+                        current_vector[4] = 1
+                    #if any(substring in current_command for substring in F_compilacion_programas):
+                    #current_vector[5] = 1
+                    if any(substring in current_command for substring in F_ejecucion_programas):
+                        current_vector[5] = 1
+                    if any(substring in current_command for substring in F_matar_suspender_procesos):
+                        current_vector[6] = 1
+                    if any(substring in current_command for substring in F_obtencion_informacion):
                         current_vector[7] = 1
-                #Añadimos las etiquetas de cada IdSession a un diccionario
-                if i["threatLevel"] != '':
-                    label_dict[i["IdSession"]] = i["threatLevel"]
-                    current_vector [8] = i["threatLevel"]
-                data_vectors.append(current_vector)
+                    # Si no ha hecho matching con ninguna lista lo ponemos como obtencion de informacion
+                if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0] and i["listInputs"][j]["input"]!='':
+                    current_vector[7] = 1
+            #Añadimos las etiquetas de cada IdSession a un diccionario
+            if i["threatLevel"] != '':
+                label_dict[i["IdSession"]] = i["threatLevel"]
+                current_vector [8] = i["threatLevel"]
+            data_vectors.append(current_vector)
 
     df = pd.DataFrame(data_vectors,columns=['IdSession','F_leer_disco','F_escribir_disco','F_conexiones_internet','F_instalacion_compilacion_programas','F_ejecucion_programas','F_matar_suspender_procesos','F_obtencion_informacion','threatLevel']).set_index('IdSession')
     df.to_csv(workingDir+withoutextension+'.csv')
@@ -385,10 +384,10 @@ def clustering(workingDir):
 
     # Create target Directory if don't exist
     #if not os.path.exists(workingDir+'clustering'):
-        #os.mkdir(workingDir+'clustering')
-        #plt.savefig(workingDir+'clustering/'+'INDICAR_PARAMETROS_CONFIGURACION'+'.png')
+    #os.mkdir(workingDir+'clustering')
+    #plt.savefig(workingDir+'clustering/'+'INDICAR_PARAMETROS_CONFIGURACION'+'.png')
     #else:
-        #plt.savefig(workingDir+'clustering/'+'INDICAR_PARAMETROS_CONFIGURACION'+'.png')
+    #plt.savefig(workingDir+'clustering/'+'INDICAR_PARAMETROS_CONFIGURACION'+'.png')
 
     #plt.clf()
 
@@ -640,12 +639,14 @@ def correlation_matrix(X_train, y_train):
         print(fname, score)
 
 def clasificador(workingDir):
-    #Tener en cuenta el metodo "score" de Scikit-Learn para saber como de bueno es cada algoritmo de clasificacion.
-    #https://umap-learn.readthedocs.io/en/latest/transform.html
-    #Volver a usar UMAP pero partiendo datos en train y test como en la URL
-    #fit -> el modelo aprende de los datos
-    #transform -> produce una salida a partir de los datos aprendidos.
-    #Suele usarse en los casos que se divide el dataset en train + test
+
+    """
+    Metodo encargado de obtener el dataset con todos los vectores etiquetados y dividiar en dos dataset
+    train (80%) y test (20%). Acto seguido se lleva a cabo el calculo de los parámetros óptimos para cada
+    algoritmo y su posterior ejecución.
+    :param workingDir:
+    :return:
+    """
 
     #Obtenemos los datos de evaluacion etiquetados
     labeled_evaluation = pd.read_csv(workingDir+"evaluation_data.csv",index_col=0)
@@ -658,7 +659,7 @@ def clasificador(workingDir):
     y_train=train["threatLevel"]
     X_train = train.drop('threatLevel',axis=1)
 
-    correlation_matrix(X_train,y_train)
+    #correlation_matrix(X_train,y_train)
 
     #Hacemos el tunnig parameter para K-nn -> {'algorithm': 'ball_tree', 'leaf_size': 1, 'n_jobs': -1, 'n_neighbors': 8, 'weights': 'distance'}
     #tuned_parameter_KNN(X_train,y_train)
@@ -685,8 +686,8 @@ def clasificador(workingDir):
     print('F1-score por clases: ',fscore_knn)
     print('F1-score k-nn: ', sum(fscore_knn)/len(fscore_knn))
     print('Accuracy k-nn: ',accuracy_score(y_evaluation, y_knn_predict))
-    #print('Support k-nn: ',support_knn)
-    fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_knn_predict, pos_label=2)
+    print('Support k-nn: ',support_knn)
+    #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_knn_predict, pos_label=2)
     #print('AUC: ',metrics.auc(fpr, tpr))
     print()
 
@@ -712,8 +713,8 @@ def clasificador(workingDir):
     print('F1-score por clases: ',fscore_dt)
     print('F1-score DT: ', sum(fscore_dt)/len(fscore_dt))
     print('Accuracy DT: ',accuracy_score(y_evaluation, y_dt_predict))
-    #print('Support DT: ',support_dt)
-    fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_dt_predict, pos_label=2)
+    print('Support DT: ',support_dt)
+    #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_dt_predict, pos_label=2)
     #print('AUC: ',metrics.auc(fpr, tpr))
     print()
 
@@ -739,8 +740,8 @@ def clasificador(workingDir):
     print('F1-score por clases: ',fscore_rf)
     print('F1-score RF: ', sum(fscore_rf)/len(fscore_rf))
     print('Accuracy RF: ',accuracy_score(y_evaluation, y_rf_predict))
-    #print('Support RF: ',support_rf)
-    fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_rf_predict, pos_label=2)
+    print('Support RF: ',support_rf)
+    #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_rf_predict, pos_label=2)
     #print('AUC: ',metrics.auc(fpr, tpr))
     #print(rf.feature_importances_)
     print()
@@ -767,8 +768,8 @@ def clasificador(workingDir):
     print('F1-score por clases: ',fscore_svm)
     print('F1-score SVM: ', sum(fscore_svm)/len(fscore_svm))
     print('Accuracy SVM: ',accuracy_score(y_evaluation, y_svm_predict))
-    #print('Support SVM: ',support_svm)
-    fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
+    print('Support SVM: ',support_svm)
+    #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
     #print('AUC: ',metrics.auc(fpr, tpr))
     print()
 
@@ -794,11 +795,11 @@ def tuned_parameter_svm (X_train, y_train):
 
     model=SVC()
     params = [{'kernel': ['rbf'], 'gamma': [1e-2, 1e-3, 1e-4, 1e-5],
-                         'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]},
-                        {'kernel': ['sigmoid'], 'gamma': [1e-2, 1e-3, 1e-4, 1e-5],
-                         'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]},
-                        {'kernel': ['linear'], 'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]}
-                        ]
+               'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]},
+              {'kernel': ['sigmoid'], 'gamma': [1e-2, 1e-3, 1e-4, 1e-5],
+               'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]},
+              {'kernel': ['linear'], 'C': [0.001, 0.10, 0.1, 10, 25, 50, 100, 1000]}
+              ]
 
     scores = ['precision'] #, 'recall']
 
@@ -1012,7 +1013,6 @@ def separate_label_classification(workingDir,algorithm):
 
 def verify_label_classification(workingDir,algorithm):
     """
-
     Metodo encargado de unir los csv del primer cluster y los nuevos vectores predecidos por los algoritmos.
     Tras esto, se entrena de nuevo K-means con todos los datos juntos, siendo añadiso los nuevos vectores por el final
     y se asocia los nuevos cluster con los anteriores. Sabiendo el nº de vectores predichos y anteriores por cluster, más
@@ -1303,7 +1303,7 @@ if __name__ == "__main__":
     if arg.dir is not None:
         start = timer()
 
-        #JSONToCSV(arg.dir)
+        JSONToCSV(arg.dir)
         #onehotEncoding(arg.dir)
         """
         Saber el número de cluster para modificar parametros de la funcion clustering y draw_kmeans
@@ -1334,4 +1334,4 @@ if __name__ == "__main__":
         #verify_label_classification(arg.dir,'dt')
 
         end = timer()
-        print('Tiempo fichero: {}'.format(end - start))
+print('Tiempo total: {}'.format(end - start))
