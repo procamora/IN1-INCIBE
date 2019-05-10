@@ -74,13 +74,6 @@ def JSONToCSV(workingDir):
     #Dividimos todos los datos en train y evaluation
     separate_train_evaluatio(workingDir,combined_csv)
 
-    #Asignamos una etiqueta a cada session
-    #labeled_IdSession(workingDir,label_dict)
-
-    #writer = csv.writer(open(workingDir+'labeled_IdSession.csv','w+'))
-    #writer.writerow(["IdSession", "label"])
-    #for key, value in label_dict.items():
-    #writer.writerow([key, value])
 
 def getJSON(fileJSON):
     """
@@ -194,17 +187,9 @@ def createFileCSV(workingDir,withoutextension, dataCompleted, label_dict):
 
 def separate_train_evaluatio(workingDir, df):
 
-    #Cargamos el fichero .csv
-    #df = pd.read_csv(workingDir+"combined_csv.csv",index_col=0)
-
     #Dividimos el dataset en entrenamiento y evaluacion para poder hacer clasificacion
     X_train, X_evaluation = train_test_split(df, test_size = 0.20)
-    #Establecemos el indice numero ordenado de nuevo
-    #X_train = X_train.reset_index()
-    #X_evaluation = X_evaluation.reset_index()
-    #Eliminamos la columna index que se genera
-    #X_train = X_train.drop('index', axis=1)
-    #X_evaluation = X_evaluation.drop('index', axis=1)
+
     X_train.to_csv(workingDir+"train_data.csv")
     X_evaluation.to_csv(workingDir+"evaluation_data.csv")
 
@@ -773,23 +758,6 @@ def clasificador(workingDir):
     #print('AUC: ',metrics.auc(fpr, tpr))
     print()
 
-    #Obtencion de parametros optimos -> {'alpha': 0.1, 'eta0': 10, 'learning_rate': 'constant', 'loss': 'huber', 'penalty': 'l1'}
-    #tuned_parameter_SGD(X_train,y_train)
-    #sgd = SGDClassifier(alpha= 0.1, eta0= 10, learning_rate= 'constant', loss= 'huber', penalty= 'l1')
-    #sgd.fit(X_train,y_train)
-
-    #y_sgd_predict = sgd.predict(X_evaluation)
-
-    #print('Score train SGD: ',sgd.score(X_train,y_train))
-    #print('Score evaluation SGD: ',sgd.score(X_evaluation,y_evaluation))
-
-    #precision_sgd, recall_sgd, fscore_sgd, support_sgd = precision_recall_fscore_support(y_evaluation, y_sgd_predict)
-
-    #print('Precision SGD: ', sum(precision_sgd)/len(precision_sgd))
-    #print('Recall SGD: ', sum(recall_sgd)/len(recall_sgd))
-    #print('F1-score SGD: ', sum(fscore_sgd)/len(fscore_sgd))
-    #print('Support SGD: ',support_sgd)
-
 
 def tuned_parameter_svm (X_train, y_train):
 
@@ -1304,6 +1272,7 @@ if __name__ == "__main__":
         start = timer()
 
         JSONToCSV(arg.dir)
+        clasificador(arg.dir)
         #onehotEncoding(arg.dir)
         """
         Saber el número de cluster para modificar parametros de la funcion clustering y draw_kmeans
@@ -1325,7 +1294,6 @@ if __name__ == "__main__":
         """
         #new_apriori_algorithm(arg.dir)
         #labeled_IdSession(arg.dir)
-        clasificador(arg.dir)
         #separate_label_classification(arg.dir,'svm')
         #verify_label_classification(arg.dir,'svm')
         #separate_label_classification(arg.dir,'knn')
