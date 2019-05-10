@@ -136,6 +136,25 @@ Ejemplo de uso:
     python3 run.py -o log -v/
     python3 run.py
 
+### Machine Learning
+
+Esta clase tiene como funcionalidad convertir los ficheros JSON en un dataset legible para
+los diferentes algoritmos de clasificación que serán lanzados. Entre los algoritmos que
+serán utilizados para clasificar las sesiones de Cowrie se encuentra
+Random Forest, SVM, Decision Tree y K-NN. Destacar que los parámetros de configuración de
+los algoritmos están ajustados para un entorno de pruebas específico, siendo
+necesario su ajuste para un entorno distinto al actual. Para lanzar de forma satisfactoria
+esta clase es necesario tener almacenado en un directorio **únicamente** los ficheros **cowrie.completed.json** de 
+cada una de las posibles instancias de Cowrie. Dicha clase únicamente tiene un argumento posible:
+
+-   d: Directorio donde se guardaran los ficheros JSON con los datos
+    parseados.
+
+Ejemplo de uso:
+
+    python3 machineLearning.py -d ../workingDirWithFilesJSON/
+
+
 ### ElasticSearch
 
 Este script esta ubicado en el directorio *utils*. Su funcionalidad es
