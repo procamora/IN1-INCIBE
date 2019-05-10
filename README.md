@@ -70,7 +70,7 @@ proyecto:
 
     sudo pip3 install -r requirements
 
-\todo{completar con librerias ML}
+
 Uso
 ---
 
@@ -136,7 +136,8 @@ Ejemplo de uso:
     python3 run.py -o log -v/
     python3 run.py
 
-### Machine Learning
+Machine Learning
+---
 
 Esta clase tiene como funcionalidad convertir los ficheros JSON en un dataset legible para
 los diferentes algoritmos de clasificación que serán lanzados. Entre los algoritmos que
