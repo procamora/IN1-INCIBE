@@ -4,6 +4,8 @@ import sqlite3
 import os
 
 
+DB = "virustotal.db"
+
 def conectionSQLite(db, query, dict=False):
     if os.path.exists(db):
         conn = sqlite3.connect(db)
@@ -49,3 +51,40 @@ def dumpDatabase(db):
     if os.path.exists(db):
         con = sqlite3.connect(db)
         return '\n'.join(con.iterdump())
+
+
+# un hash existe si esta en la bd con state 1 (Ok)
+def isExistsMD5(md5):
+    query = "SELECT * FROM hash WHERE md5 LIKE '{}'".format(md5)
+    response = conectionSQLite(DB, query, True)
+    if len(response) == 0:
+        return True
+    return False
+
+
+# un hash existe si esta en la bd con state 1 (Ok)
+def isNewMD5(md5):
+    query = "SELECT * FROM hash WHERE md5 LIKE '{}' AND state LIKE 1".format(md5)
+    response = conectionSQLite(DB, query, True)
+    if len(response) == 0:
+        return True
+    return False
+
+
+# un hash existe si esta en la bd con state 1 (Ok)
+def isNewURL(url):
+    query = "SELECT * FROM hash WHERE url LIKE '{}' AND state LIKE 1".format(url)
+    response = conectionSQLite(DB, query, True)
+    if len(response) == 0:
+        return True
+    return False
+
+
+def selectMD5(md5):
+    query = "SELECT * FROM hash WHERE md5 LIKE '{}'".format(md5)
+    return conectionSQLite(DB, query, True)[0]
+
+
+def selectURL(url):
+    query = "SELECT * FROM hash WHERE url LIKE '{}'".format(url)
+    return conectionSQLite(DB, query, True)[0]

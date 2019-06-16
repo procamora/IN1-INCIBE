@@ -9,59 +9,98 @@ import threading
 import requests
 import logging
 import hashlib
+import time
 import json
 import os
 
-from connect_sqlite import conectionSQLite
-from virustotal import analize
+from connect_sqlite import isNewMD5, isNewURL, selectMD5, selectURL, DB, ejecutaScriptSqlite, conectionSQLite, isExistsMD5
+from virustotal import analizeHash, analizeUrl
 
 requests.packages.urllib3.disable_warnings()
 
 MIME_TYPE = 'application/json'
-DB = "virustotal.db"
+
+STATES = {
+    1: "Scan finished, information embedded",                                       # "Ok",
+    2: "The requested resource is not among the finished, queued or pending scans", # "Not Exists",
+    3: "Scan request successfully queued, come back later for the report"           # "Analyzing"
+    }
 
 HASH_INPROGRESS = list()
 
 app = Flask(__name__)
 
 
-def isNewMD5(md5):
-    query = "SELECT * FROM hash WHERE md5 LIKE '{}'".format(md5)
-    response = conectionSQLite(DB, query, True)
-    if len(response) == 0:
-        return True
-    return False
+def myDaemon():
+    while True:
+        for i in HASH_INPROGRESS:
+            app.logger.info("Demonio analiza: {}".format(i))
+            thread_analizeHash(i)
+
+        time.sleep(5)
 
 
-def isNewURL(url):
-    query = "SELECT * FROM hash WHERE url LIKE '{}'".format(url)
-    response = conectionSQLite(DB, query, True)
-    if len(response) == 0:
-        return True
-    return False
+def insertUpdateMD5(file, md5, json, state, url=""):
+    #app.logger.info("md5: {}".format(md5))
+    #app.logger.info("isNewMD5(md5): {}".format(isNewMD5(md5)))
+    #app.logger.info("isNewURL(url): {}".format(isNewURL(url)))
 
+    if isExistsMD5(md5):
+        query = "INSERT INTO hash(file, md5, json, url, state) VALUES ('{}', '{}', '{}', '{}', {})".format(file, md5, json, url, state)
+        #print('INSERT')
+    else:
+        query = "UPDATE hash SET json = '{}' WHERE md5 = '{}'".format(json, md5)
+        #print('UPDATE')
 
-def insertMD5(file, md5, json, url=""):
-    query = "INSERT INTO hash(file, md5, json, url) VALUES ('{}', '{}', '{}', '{}')".format(file, md5, json, url)
     conectionSQLite(DB, query)
 
 
-def selectMD5(md5):
-    query = "SELECT * FROM hash WHERE md5 LIKE '{}'".format(md5)
-    return conectionSQLite(DB, query, True)[0]
+def getStateJson(response):
+    response = json.loads(response)
+    #app.logger.info("response: {}".format(response))
+    app.logger.info("Code: {}".format(response['results']['response_code']))
 
-
-def selectURL(url):
-    query = "SELECT * FROM hash WHERE url LIKE '{}'".format(url)
-    return conectionSQLite(DB, query, True)[0]
+    if response['results']['verbose_msg'] == STATES[3]:
+        return 3
+    elif response['results']['verbose_msg'] == STATES[2]:
+        return 2
+    elif response['results']['verbose_msg'] == STATES[1]:
+        return 1
+    else:
+        return 4
 
 
 def thread_analizeHash(md5, file="", url=""):
+    response = analizeHash(md5)
+    resp = json.loads(response)
+    if resp['response_code'] == 204:
+        app.logger.info("Excedidas peticiones por minuto, reintendanto: {}".format(md5))
+        app.logger.info(HASH_INPROGRESS)
+        #time.sleep(5)
+    else:
+        app.logger.info("Insertamos {} en la BD".format(md5))
+        state = getStateJson(response)
+        ###########################################
+        ###########################################
+        #Si no existe ese hash lo insertamos en caso contrario actualizamos su informacion
+        insertUpdateMD5(file, md5, response, state, url)
+        ###########################################
+        ###########################################
+        ###########################################
+        HASH_INPROGRESS.remove(md5)
+    return response
+
+
+def thread_analizeUrl(url, file):
     # es un bucle hasta que tengamos respuesta
-    HASH_INPROGRESS.append(md5)
-    response = analize(md5)
-    insertMD5(file, md5, response, url)
-    HASH_INPROGRESS.remove(md5)
+    response = analizeUrl(url)
+    state = getStateJson(response)
+    ###########################################
+    ###########################################
+    #Si no existe ese hash lo insertamos en caso contrario actualizamos su informacion
+    insertUpdateMD5(file, "md5", response, state, url)
+    ###########################################
+    ###########################################
     return response
 
 
@@ -92,12 +131,12 @@ def thread_downloadFile(file_url, file_name):
 
         md5hasher = FileHash('md5')
         newHash = md5hasher.hash_file("./{}".format(file_name))
-        if isNewMD5(newHash):
+        if (not newHash in HASH_INPROGRESS) and (isNewMD5(newHash)):
             app.logger.info("Insertamos %s en la BD", file_name)
+            HASH_INPROGRESS.append(newHash)
             thread_analizeHash(newHash, file_name, file_url) # Aqui no es un hilo
-            #insertMD5(file_name, newHash, '{"a":"b"}')
 
-        #######os.remove(file_name)
+        #######os.remove(file_name) # FIXME DESCOMENTAR
     app.logger.info("Thread %s: finishing", file_name)
 
 
@@ -106,17 +145,31 @@ def hello():
     return Response(response='{"status": "ok"}', status=HTTPStatus.OK, mimetype=MIME_TYPE)
 
 
-@app.route('/vt', methods=['GET'])
-def virustotal():
+@app.route('/analize', methods=['GET'])
+def virustotalMD5():
     md5 = requestFlask.args.get('md5')
 
     if (not md5 in HASH_INPROGRESS) and (isNewMD5(md5)):
-        x = threading.Thread(target=thread_analizeHash, args=(md5))
-        x.start()
-        return Response(response="", status=HTTPStatus.CREATED, mimetype=MIME_TYPE)
+        HASH_INPROGRESS.append(md5)
+        response = thread_analizeHash(md5)
+        return Response(response=response, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
     else:
         response = selectMD5(md5)
         return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+
+
+@app.route('/analize', methods=['POST'])
+def virustotalURL():
+    values = requestFlask.get_json()
+    file_url = str(values['url'])
+    file_name = file_url.split('/')[-1]
+
+    if not isNewURL(file_url):
+        response = selectURL(file_url)
+        return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+    else:
+        thread_analizeUrl(file_url, file_name)
+        return Response(response="", status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
 
 
 @app.route('/download', methods=['POST'])
@@ -132,15 +185,19 @@ def download():
     if is_downloadable(file_url):
         x = threading.Thread(target=thread_downloadFile, args=(file_url, file_name))
         x.start()
-        return Response(response=file_name, status=HTTPStatus.CREATED, mimetype=MIME_TYPE)
+        return Response(response=file_name, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
     else:
         return Response(response='{"error": "File not downloadable"}', status=HTTPStatus.FORBIDDEN, mimetype=MIME_TYPE)
 
 
+
 if __name__ == "__main__":
     if not os.path.isfile(DB):
-        app.logger.info("Creamos BD: ", DB)
-        os.system('sqlite3 {} < hash.sql'.format(DB))
+        print("Creamos BD: {}".format(DB))
+        with open('hash.sql', 'r') as f:
+            ejecutaScriptSqlite(DB, f.read())
 
+    d = threading.Thread(target=myDaemon, name='Daemon', daemon=True)
+    d.start()
     app.run(debug=True, port=8080)
 

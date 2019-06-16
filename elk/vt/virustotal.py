@@ -27,7 +27,7 @@ if __name__ == "__main__":
     EICAR_MD5 = hashlib.md5(EICAR).hexdigest()
     #print(EICAR_MD5)
     #print(analizeHash(EICAR_MD5))
-    #print(analizeHash("18081a9d70111fd849150b4d529eef3c"))
+    print(analizeHash("18081a9d70111fd849150b4d529eef3c"))
 
     URL_DOWNLOAD = "http://121.174.70.181/zehir/z3hir.sh4"
     print(analizeUrl(URL_DOWNLOAD))

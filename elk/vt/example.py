@@ -8,6 +8,8 @@ import sys
 
 URL = "http://127.0.0.1:8080"
 
+
+#https://urlhaus.abuse.ch/browse/
 #URL_DOWNLOAD = "https://pypi.org/static/images/logo-small.6eef541e.svg" 
 URL_DOWNLOAD = "http://121.174.70.181/zehir/z3hir.sh4" 
 URL_DOWNLOAD = "https://miro.medium.com/max/790/1*uHzooF1EtgcKn9_XiSST4w.png" 
@@ -27,9 +29,22 @@ def download():
 	print('')
 
 
+def url():
+	data = '''{"url": "%s"}''' %(URL_DOWNLOAD)
+
+	myjson = json.dumps(json.loads(data))
+
+	url = '{}/analize'.format(URL)
+	headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+	r = requests.post(url, data=myjson, headers=headers)
+
+	print("download:", r.status_code)
+	print(r.text)
+	print('')
+
 
 def md5(md5hex):
-	url = '{}/vt?md5={}'.format(URL, md5hex)
+	url = '{}/analize?md5={}'.format(URL, md5hex)
 	headers = {'Accept': 'application/json'}
 	r = requests.get(url, headers=headers)
 
@@ -51,6 +66,8 @@ list_hash = ('d1bdc5aaa294b4c52678c4c60f052569', '087951566fb77fe74909d4e4828dd4
 for i in list_hash:
 	print(i)
 
-md5("8102c7a5d1cba3758991cd86b177c3fc")
 
+
+url()
+#md5("815f40789226a46453943b3fe7ad1eaf")
 #download()
