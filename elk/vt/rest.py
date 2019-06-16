@@ -35,7 +35,10 @@ def myDaemon():
     while True:
         for i in HASH_INPROGRESS:
             app.logger.info("Demonio analiza: {}".format(i))
-            thread_analizeHash(i)
+            response = thread_analizeHash(i)
+            resp = json.loads(response)
+            if resp['response_code'] == 204:
+                break
 
         time.sleep(5)
 
@@ -44,7 +47,6 @@ def insertUpdateMD5(file, md5, json, state, url=""):
     #app.logger.info("md5: {}".format(md5))
     #app.logger.info("isNewMD5(md5): {}".format(isNewMD5(md5)))
     #app.logger.info("isNewURL(url): {}".format(isNewURL(url)))
-
     if isExistsMD5(md5):
         query = "INSERT INTO hash(file, md5, json, url, state) VALUES ('{}', '{}', '{}', '{}', {})".format(file, md5, json, url, state)
         #print('INSERT')
@@ -76,31 +78,19 @@ def thread_analizeHash(md5, file="", url=""):
     if resp['response_code'] == 204:
         app.logger.info("Excedidas peticiones por minuto, reintendanto: {}".format(md5))
         app.logger.info(HASH_INPROGRESS)
-        #time.sleep(5)
     else:
         app.logger.info("Insertamos {} en la BD".format(md5))
         state = getStateJson(response)
-        ###########################################
-        ###########################################
-        #Si no existe ese hash lo insertamos en caso contrario actualizamos su informacion
         insertUpdateMD5(file, md5, response, state, url)
-        ###########################################
-        ###########################################
-        ###########################################
         HASH_INPROGRESS.remove(md5)
     return response
 
 
 def thread_analizeUrl(url, file):
-    # es un bucle hasta que tengamos respuesta
     response = analizeUrl(url)
     state = getStateJson(response)
-    ###########################################
-    ###########################################
     #Si no existe ese hash lo insertamos en caso contrario actualizamos su informacion
     insertUpdateMD5(file, "md5", response, state, url)
-    ###########################################
-    ###########################################
     return response
 
 
@@ -188,7 +178,6 @@ def download():
         return Response(response=file_name, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
     else:
         return Response(response='{"error": "File not downloadable"}', status=HTTPStatus.FORBIDDEN, mimetype=MIME_TYPE)
-
 
 
 if __name__ == "__main__":

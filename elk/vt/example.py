@@ -65,9 +65,11 @@ list_hash = ('d1bdc5aaa294b4c52678c4c60f052569', '087951566fb77fe74909d4e4828dd4
 
 for i in list_hash:
 	print(i)
+	md5(i)
 
 
 
-url()
-#md5("815f40789226a46453943b3fe7ad1eaf")
+
+#url()
+md5("815f40789226a46453943b3fe7ad1eaf")
 #download()
