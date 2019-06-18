@@ -7,8 +7,6 @@ from filehash import FileHash
 from http import HTTPStatus # https://docs.python.org/3/library/http.html
 import threading
 import requests
-import logging
-import hashlib
 import time
 import json
 import os
@@ -37,7 +35,7 @@ def myDaemon():
             app.logger.info("Demonio analiza: {}".format(i))
             response = thread_analizeHash(i)
             resp = json.loads(response)
-            if resp['response_code'] == 204:
+            if 'response_code' in resp.keys() and resp['response_code'] == 204:
                 break
 
         time.sleep(5)
@@ -75,6 +73,8 @@ def getStateJson(response):
 def thread_analizeHash(md5, file="", url=""):
     response = analizeHash(md5)
     resp = json.loads(response)
+    if 'error' in resp.keys():
+        return '{"error": "timeout connect virustotal.com"}'
     if resp['response_code'] == 204:
         app.logger.info("Excedidas peticiones por minuto, reintendanto: {}".format(md5))
         app.logger.info(HASH_INPROGRESS)
@@ -188,5 +188,5 @@ if __name__ == "__main__":
 
     d = threading.Thread(target=myDaemon, name='Daemon', daemon=True)
     d.start()
-    app.run(debug=True, port=8080)
+    app.run(debug=True, port=8080, host='0.0.0.0')
 

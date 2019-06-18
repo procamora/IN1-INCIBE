@@ -1,0 +1,41 @@
+{"message":"New connection: 172.24.0.1:43392 (172.24.0.2:2222) [session: edd9a2b8aa6f]","protocol":"ssh","src_ip":"172.24.0.1","sensor":"cdc4842b815d","dst_ip":"172.24.0.2","session":"edd9a2b8aa6f","timestamp":"2019-06-17T07:54:18.923455Z","eventid":"cowrie.session.connect","src_port":43392,"dst_port":2222}
+
+
+
+{"message":"Remote SSH version: b'SSH-2.0-OpenSSH_8.0'","version":"b'SSH-2.0-OpenSSH_8.0'","src_ip":"172.24.0.1","sensor":"cdc4842b815d","session":"edd9a2b8aa6f","eventid":"cowrie.client.version","timestamp":"2019-06-17T07:54:18.930695Z"}
+{"macCS":["hmac-sha2-256-etm@openssh.com","hmac-sha1-etm@openssh.com","umac-128@openssh.com","hmac-sha2-512"],
+					"keyAlgs":["ecdsa-sha2-nistp256-cert-v01@openssh.com","ssh-ed25519-cert-v01@openssh.com","ext-info-c"],
+					"langCS":[""],
+					"compCS":["none","zlib@openssh.com","zlib"],
+					"message":"SSH client hassh fingerprint: 2e0b1db6a436814a699e5c982f48226a","hassh":"2e0b1db6a436814a699e5c982f48226a",
+					"encCS":["aes256-gcm@openssh.com","chacha20-poly1305@openssh.com","aes256-ctr","aes256-cbc","aes128-gcm@openssh.com","aes128-ctr","aes128-cbc"],
+					"hasshAlgorithms":"curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group14-sha256;none,zlib@openssh.com,zlib",
+					"session":"edd9a2b8aa6f",
+					"eventid":"cowrie.client.kex",
+					"timestamp":"2019-06-17T07:54:18.937889Z",
+					"src_ip":"172.24.0.1"}
+
+
+
+
+
+{"message":"login attempt [root/asdad] succeeded","src_ip":"172.24.0.1","sensor":"cdc4842b815d","username":"root","password":"asdad","session":"edd9a2b8aa6f","eventid":"cowrie.login.success","timestamp":"2019-06-17T07:54:32.104550Z"}
+
+
+{"message":"Terminal Size: 212 27","width":212,"src_ip":"172.24.0.1","sensor":"cdc4842b815d","height":27,"session":"edd9a2b8aa6f","eventid":"cowrie.client.size","timestamp":"2019-06-17T07:54:32.847689Z"}
+
+
+{"message":[],"src_ip":"172.24.0.1","sensor":"cdc4842b815d","session":"edd9a2b8aa6f","eventid":"cowrie.session.params","timestamp":"2019-06-17T07:54:32.858718Z","arch":"linux-x86-lsb"}
+
+
+
+
+{"message":"CMD: ls -la","src_ip":"172.24.0.1","sensor":"cdc4842b815d","session":"edd9a2b8aa6f","input":"ls -la","eventid":"cowrie.command.input","timestamp":"2019-06-17T07:54:36.719203Z"}
+{"message":"CMD: cty","src_ip":"172.24.0.1","sensor":"cdc4842b815d","session":"edd9a2b8aa6f","input":"cty","eventid":"cowrie.command.input","timestamp":"2019-06-17T07:54:40.778158Z"}
+{"message":"Command not found: cty","src_ip":"172.24.0.1","sensor":"cdc4842b815d","session":"edd9a2b8aa6f","input":"cty","eventid":"cowrie.command.failed","timestamp":"2019-06-17T07:54:40.785354Z"}
+{"message":"CMD: exit","src_ip":"172.24.0.1","sensor":"cdc4842b815d","session":"edd9a2b8aa6f","input":"exit","eventid":"cowrie.command.input","timestamp":"2019-06-17T07:54:46.262164Z"}
+
+
+
+{"message":"Closing TTY Log: var/lib/cowrie/tty/edd7f1e0e3e03b977cde0944d2e528a4280e1181490f8325991e0ce95c02eafa after 13 seconds","ttylog":"var/lib/cowrie/tty/edd7f1e0e3e03b977cde0944d2e528a4280e1181490f8325991e0ce95c02eafa","size":697,"timestamp":"2019-06-17T07:54:46.269316Z","sensor":"cdc4842b815d","duplicate":false,"src_ip":"172.24.0.1","session":"edd9a2b8aa6f","duration":13.412670373916626,"eventid":"cowrie.log.closed","shasum":"edd7f1e0e3e03b977cde0944d2e528a4280e1181490f8325991e0ce95c02eafa"}
+{"message":"Connection lost after 27 seconds","src_ip":"172.24.0.1","sensor":"cdc4842b815d","session":"edd9a2b8aa6f","duration":27.358638286590576,"eventid":"cowrie.session.closed","timestamp":"2019-06-17T07:54:46.288497Z"}

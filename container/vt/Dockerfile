@@ -1,0 +1,15 @@
+FROM python:3.6-alpine
+
+COPY requirements /root
+COPY rest.py /root
+COPY connect_sqlite.py /root
+COPY virustotal.py /root
+COPY hash.sql /root
+
+WORKDIR /root
+
+RUN pip install -r requirements
+
+EXPOSE 8080
+
+CMD ["python", "-u", "rest.py"]  
