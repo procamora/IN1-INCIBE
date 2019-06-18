@@ -3,7 +3,6 @@
 
 import argparse
 import configparser
-import json
 from timeit import default_timer as timer
 
 from elasticsearch import Elasticsearch
@@ -36,7 +35,7 @@ class Elastic(object):
         with open(file, 'r') as open_file:
             for entry in open_file:
                 if len(entry) > 2: # evitar lineas en blanco "\n"
-                    res = self._es.index(index=myIndex, doc_type='object', body=entry)
+                    self._es.index(index=myIndex, doc_type='object', body=entry)
         # print('index: ' + res['result'])
         # but not deserialized
         # res = self._es.get(index=myIndex, doc_type=self._doc_type)

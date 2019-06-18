@@ -135,6 +135,7 @@ class Parser(object):
             else:
                 valid = False
 
+            # FIXME REVISAR EL USO DE s en el else, meter esto bloquee en el if??
             # Avanzamos las lineas necesarias hasta tener una linea con la ip de la conexion
             while not re.match(r'.*,\d+,{}'.format(connectionAuxDict[connection].getIp()), s, re.IGNORECASE) and valid:
                 cont += 1

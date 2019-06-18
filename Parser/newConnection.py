@@ -316,7 +316,7 @@ class NewConnection(json.JSONEncoder):
                     extendJson = "{}, \"{}\": \"{}\"".format(extendJson, i, myDict[i])
                 #print(json.dumps(myDict[i], cls=ObjectEncoder))
 
-        extendJson = "%s}"%(extendJson)
+        extendJson = "%s}" % extendJson
         jsonUpdate = json.loads(extendJson)
         jsonUpdate['session'] = self._IdSession
         jsonUpdate.pop('IdSession', None)

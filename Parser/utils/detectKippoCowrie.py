@@ -7,11 +7,8 @@
 # by Julio Cesar Fort
 # Copyright 2016-2018 Blaze Information Security
 
-import sys
 import socket
-import time
-import platform
-import argparse
+import sys
 
 CRED = '\033[91m'
 CEND = '\033[0m'
@@ -56,7 +53,7 @@ def connectToSSH(host, port):
             if VERBOSE:
                 print("[+] %s:%d advertised itself as OpenSSH. Continuing..." % (host, port))
             else:
-                printf("[!] %s:%d does not advertise itself as OpenSSH. Quitting..." % (host, port))
+                print("[!] %s:%d does not advertise itself as OpenSSH. Quitting..." % (host, port))
                 return False
 
     except Exception as err:
@@ -167,6 +164,9 @@ def main():
     if len(sys.argv) >= 1:
         host = sys.argv[1]
         port = int(sys.argv[2])
+    else:
+        print('Argument incorrect')
+        return
     
     score = detectKippoCowrie(host, port)
     

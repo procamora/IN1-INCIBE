@@ -6,7 +6,6 @@ import datetime
 import glob
 import os
 import re
-import sys
 
 
 def CreateArgParser():
@@ -25,8 +24,6 @@ def CreateArgParser():
     return myParser.parse_args()
 
 def convert(directory):
-    output = 'out'
-
     files = '{}/cowrie.log.*'.format(directory)
     date = datetime.datetime(2009,11,7)
 
