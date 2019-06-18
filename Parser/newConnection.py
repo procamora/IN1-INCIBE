@@ -270,6 +270,61 @@ class NewConnection(json.JSONEncoder):
 
         return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
 
+    def getJSONCowrie(self):
+        """
+        Metodo para obtener un string con toda la informacion de la conexion en formato JSON
+
+        :return: string
+        """
+
+        # self.updateThreatLevel()
+        threatLevel = ThreatLevel()
+        self._threatLevel = threatLevel.getThreatLevel(self._listInputs)
+
+        self.updateAtributes()
+
+        # Creo un diccionario solo con los valores que necesito y elimminando el _ de las variables privadas
+        myDict = dict()
+        ignore = ['_connectionAux', '_verbose', '_listCommandPending', '_COMMANDS_DANGEROUS']
+        for i in self.__dict__:
+            if i not in ignore:
+                myDict[i.replace('_', '')] = self.__dict__[i]
+
+        myJson = str()
+        extendJson = str()
+        for i in myDict:
+            # Si solo es una tabla lo converte a json y añande la sesion
+            if isinstance(myDict[i], Table):
+                jsonTable = myDict[i].toJSON()
+                jsonUpdate = json.loads(jsonTable)
+                jsonUpdate['session'] = self._IdSession
+                myJson = "{}\n{}".format(myJson, json.dumps(jsonUpdate))
+            # Si es una lista de tablas para cada una le añade la sesion y para comandos añade el binario
+            elif isinstance(myDict[i], list):
+                for j in myDict[i]:
+                    jsonTable = j.toJSON()
+                    jsonUpdate = json.loads(jsonTable)
+                    jsonUpdate['session'] = self._IdSession
+                    if isinstance(j, TableInput):
+                        jsonUpdate['binary'] = jsonUpdate['input'].split(' ')[0]
+                    myJson = "{}\n{}".format(myJson, json.dumps(jsonUpdate))
+            # Los elementos sueltos los añade a un unoco json
+            else:
+                if len(extendJson) == 0:
+                    extendJson = "{\"%s\": \"%s\""%(i, myDict[i])
+                else:
+                    extendJson = "{}, \"{}\": \"{}\"".format(extendJson, i, myDict[i])
+                #print(json.dumps(myDict[i], cls=ObjectEncoder))
+
+        extendJson = "%s}"%(extendJson)
+        jsonUpdate = json.loads(extendJson)
+        jsonUpdate['session'] = self._IdSession
+        jsonUpdate.pop('IdSession', None)
+
+        myJson = "{}\n{}".format(myJson, jsonUpdate)
+        #return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
+        return myJson
+
     def loadClient(self, stringJson):
         self._client.load(stringJson['version'], stringJson['shortName'])
         self._client.setKeyAlg(stringJson['keyAlg'])
@@ -384,7 +439,7 @@ class NewConnection(json.JSONEncoder):
         return re.escape(command)
 
     @staticmethod
-    def fromJson(jsonSession, jsonNoSession):
+    def fromJson(jsonSession, jsonNoSession, simple=True):
         aux = ConnectionAux(jsonSession['session']['ip'], jsonSession['IdSession'], jsonSession['session']['starttime'])
         aux.setId(jsonSession['idip'].split(',')[0])
         nCon = NewConnection(aux, False, None)
@@ -392,33 +447,44 @@ class NewConnection(json.JSONEncoder):
         for i in jsonSession:
             if i == 'client':
                 nCon.loadClient(jsonSession[i])
-                nCon.loadClient(jsonNoSession[i])
+                if simple:
+                    nCon.loadClient(jsonNoSession[i])
             elif i == 'ttylog':
                 nCon.loadTtylog(jsonSession[i])
-                nCon.loadTtylog(jsonNoSession[i])
+                if simple:
+                    nCon.loadTtylog(jsonNoSession[i])
             elif i == 'session':
                 nCon.loadSession(jsonSession[i])
-                nCon.loadSession(jsonNoSession[i])
+                if simple:
+                    nCon.loadSession(jsonNoSession[i])
             elif i == 'geoip':
                 nCon.loadGeoIp(jsonSession[i])
-                nCon.loadGeoIp(jsonNoSession[i])
+                if simple:
+                    nCon.loadGeoIp(jsonNoSession[i])
             elif i == 'fingerprint':
                 nCon.loadFingerprint(jsonSession[i])
-                nCon.loadFingerprint(jsonNoSession[i])
+                if simple:
+                    nCon.loadFingerprint(jsonNoSession[i])
             elif i == 'listInputs':
                 for command in jsonSession[i]:
                     nCon.loadInput(command)
-                for command in jsonNoSession[i]:
-                    nCon.loadInput(command)
+                if simple:
+                    for command in jsonNoSession[i]:
+                        nCon.loadInput(command)
             elif i == 'listAuths':
                 for auth in jsonSession[i]:
                     nCon.loadAuth(auth)
-                for auth in jsonNoSession[i]:
-                    nCon.loadAuth(auth)
+                if simple:
+                    for auth in jsonNoSession[i]:
+                        nCon.loadAuth(auth)
             elif i == 'listDownloads':
                 for download in jsonSession[i]:
                     nCon.loadDownload(download)
-                for download in jsonNoSession[i]:
-                    nCon.loadDownload(download)
+                if simple:
+                    for download in jsonNoSession[i]:
+                        nCon.loadDownload(download)
+        if simple:
+            return nCon
+        else:
 
-        return nCon
+            return nCon

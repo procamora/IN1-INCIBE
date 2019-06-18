@@ -28,12 +28,12 @@ class ThreatLevel(object):
             return 4
 
         for commands in listInputs:
-            command = commands.split(' ')[0]  # Obtenemos solo el comando
+            command = commands.getInput().split(' ')[0]  # Obtenemos solo el comando
             if command in self._LEVEL_1:
                 return 1
 
         for commands in listInputs:
-            command = commands.split(' ')[0]  # Obtenemos solo el comando
+            command = commands.getInput().split(' ')[0]  # Obtenemos solo el comando
             if command in self._LEVEL_2:
                 return 2
 
