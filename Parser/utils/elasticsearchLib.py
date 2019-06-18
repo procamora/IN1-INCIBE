@@ -32,10 +32,11 @@ class Elastic(object):
         self._es.indices.create(index=myIndex, body=mapping)  # , ignore=400)
         print('Create index')
 
-    def insert(self, myIndex, line):
-        # datetimes will be serialized
-        lineJson = json.loads(line)
-        res = self._es.index(index=myIndex, doc_type='object', body=line)
+    def insert(self, myIndex, file):
+        with open(file, 'r') as open_file:
+            for entry in open_file:
+                if len(entry) > 2: # evitar lineas en blanco "\n"
+                    res = self._es.index(index=myIndex, doc_type='object', body=entry)
         # print('index: ' + res['result'])
         # but not deserialized
         # res = self._es.get(index=myIndex, doc_type=self._doc_type)
@@ -96,6 +97,7 @@ def CreateArgParser():
     myParser.add_argument('-m', '--mapping', help='Path of the file where the mapping of the attributes is defined.')
     myParser.add_argument('-ip', '--ip', help='IP address of the server where ElasticSearch is located.')
     myParser.add_argument('-i', '--index', help='Name of the index.')
+    myParser.add_argument('-b', '--bulk', action='store_true', help='bulk mode (boolean).', default=True)
     myParser.add_argument('-v', '--verbose', action='store_true', help='Verbose flag (boolean).', default=False)
 
     # tambien lo puedo poner en la misma linea
@@ -115,7 +117,10 @@ if __name__ == '__main__':
     if arg.mapping is not None:
         e.addMapping(arg.index, arg.mapping)
 
-    e.bulk(arg.index, arg.file)
+    if arg.bulk:
+        e.bulk(arg.index, arg.file)
+    else:
+        e.insert(arg.index, arg.file)
 
     endTotal = timer()
     if arg.verbose:
