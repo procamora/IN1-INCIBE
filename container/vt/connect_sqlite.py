@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import sqlite3
-import os
 
+import os
+import sqlite3
 
 DB = "virustotal.db"
 
-def conectionSQLite(db, query, dict=False):
+
+def conectionSQLite(db, query, isDict=False):
     if os.path.exists(db):
         conn = sqlite3.connect(db)
-        if dict:
-            conn.row_factory = __dictFactory
+        if isDict:
+            conn.row_factory = dictFactory
         cursor = conn.cursor()
         cursor.execute(query)
 
@@ -26,7 +27,7 @@ def conectionSQLite(db, query, dict=False):
         return data
 
 
-def __dictFactory(cursor, row):
+def dictFactory(cursor, row):
     d = dict()
     for idx, col in enumerate(cursor.description):
         d[col[0]] = row[idx]
@@ -50,6 +51,7 @@ def dumpDatabase(db):
     """
     if os.path.exists(db):
         con = sqlite3.connect(db)
+        # noinspection PyTypeChecker
         return '\n'.join(con.iterdump())
 
 
