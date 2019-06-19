@@ -84,9 +84,15 @@ def isNewURL(url):
 
 def selectMD5(md5):
     query = "SELECT * FROM hash WHERE md5 LIKE '{}'".format(md5)
-    return conectionSQLite(DB, query, True)[0]
+    response = conectionSQLite(DB, query, True)
+    if len(response) > 0:
+        return response[0]
+    return None
 
 
 def selectURL(url):
     query = "SELECT * FROM hash WHERE url LIKE '{}'".format(url)
-    return conectionSQLite(DB, query, True)[0]
+    response = conectionSQLite(DB, query, True)
+    if len(response) > 0:
+        return response[0]
+    return None

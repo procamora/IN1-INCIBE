@@ -77,9 +77,10 @@ def getStateJson(response):
 def thread_analizeHash(md5, file="", url=""):
     response = analizeHash(md5)
     resp = json.loads(response)
-    if 'error' in resp.keys():
-        return '{"error": "timeout connect virustotal.com"}'
-    if resp['response_code'] == 204:
+    print(resp)
+    if 'response_code' not in resp.keys():
+        return '{"error": "Timeout connect virustotal.com"}'
+    elif resp['response_code'] == 204:
         app.logger.info("Excedidas peticiones por minuto, reintendanto: {}".format(md5))
         app.logger.info(HASH_INPROGRESS)
     else:
@@ -92,10 +93,13 @@ def thread_analizeHash(md5, file="", url=""):
 
 def thread_analizeUrl(url, file):
     response = analizeUrl(url)
+    print(response)
+    if 'response_code' not in json.loads(response).keys():
+        return Response(response='{"error": "Timeout connect virustotal.com"}', status=HTTPStatus.GATEWAY_TIMEOUT, mimetype=MIME_TYPE)
     state = getStateJson(response)
     # Si no existe ese hash lo insertamos en caso contrario actualizamos su informacion
     insertUpdateMD5(file, "md5", response, state, url)
-    return response
+    return Response(response=response, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
 
 
 def is_downloadable(url):
@@ -146,10 +150,16 @@ def virustotalMD5():
     if (md5 not in HASH_INPROGRESS) and (isNewMD5(md5)):
         HASH_INPROGRESS.append(md5)
         response = thread_analizeHash(md5)
-        return Response(response=response, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
+        if 'response_code' in json.loads(response).keys():
+            return Response(response=response, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
+        else:
+            return Response(response=response, status=HTTPStatus.GATEWAY_TIMEOUT, mimetype=MIME_TYPE)
     else:
         response = selectMD5(md5)
-        return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+        if response is not None:
+            return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+        else: # fixme el md5 esta en la lista descargandose pero aun no esta en la bd
+            return Response(response=response, status=HTTPStatus.INTERNAL_SERVER_ERROR, mimetype=MIME_TYPE)
 
 
 @app.route('/analize', methods=['POST'])
@@ -160,10 +170,12 @@ def virustotalURL():
 
     if not isNewURL(file_url):
         response = selectURL(file_url)
-        return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+        if response is not None:
+            return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+        else:
+            return Response(response=response['json'], status=HTTPStatus.INTERNAL_SERVER_ERROR, mimetype=MIME_TYPE)
     else:
-        thread_analizeUrl(file_url, file_name)
-        return Response(response="", status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
+        return thread_analizeUrl(file_url, file_name)
 
 
 @app.route('/download', methods=['POST'])
@@ -174,14 +186,20 @@ def download():
 
     if not isNewURL(file_url):
         response = selectURL(file_url)
-        return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+        if response is not None:
+            return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
+        else:
+            return Response(response=response['json'], status=HTTPStatus.INTERNAL_SERVER_ERROR, mimetype=MIME_TYPE)
 
-    if is_downloadable(file_url):
-        x = threading.Thread(target=thread_downloadFile, args=(file_url, file_name))
-        x.start()
-        return Response(response=file_name, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
-    else:
-        return Response(response='{"error": "File not downloadable"}', status=HTTPStatus.FORBIDDEN, mimetype=MIME_TYPE)
+    try:
+        if is_downloadable(file_url):
+            x = threading.Thread(target=thread_downloadFile, args=(file_url, file_name))
+            x.start()
+            return Response(response=file_name, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
+        else:
+            return Response(response='{"error": "File not downloadable"}', status=HTTPStatus.FORBIDDEN, mimetype=MIME_TYPE)
+    except requests.exceptions.ConnectionError:
+        return Response(response='{"error": "Timeout connect virustotal.com"}', status=HTTPStatus.GATEWAY_TIMEOUT, mimetype=MIME_TYPE)
 
 
 if __name__ == "__main__":
