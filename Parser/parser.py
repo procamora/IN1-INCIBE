@@ -5,8 +5,8 @@ import configparser
 import glob
 import re
 import sys
-from timeit import default_timer as timer
 import traceback
+from timeit import default_timer as timer
 
 import geoip2.database
 
@@ -130,14 +130,14 @@ class Parser(object):
         for connection in connectionAuxDict:
             valid = True  # Condicion que se modifica si no se lleva al final del fichero sin encontrar una asociacion
             cont = connection
+            s = str()
             if cont < fileSize:  # si la linea esta en la ultima linea no buscamos mas
                 s = file[cont]
             else:
                 valid = False
 
-            # FIXME REVISAR EL USO DE s en el else, meter esto bloquee en el if??
             # Avanzamos las lineas necesarias hasta tener una linea con la ip de la conexion
-            while not re.match(r'.*,\d+,{}'.format(connectionAuxDict[connection].getIp()), s, re.IGNORECASE) and valid:
+            while valid and not re.match(r'.*,\d+,{}'.format(connectionAuxDict[connection].getIp()), s, re.IGNORECASE):
                 cont += 1
                 if cont < fileSize:
                     s = file[cont]

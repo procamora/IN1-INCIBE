@@ -5,11 +5,11 @@
 import json
 import re
 
-from threatLevel import ThreatLevel
 from connectionAux import ConnectionAux
 from functions import parserDateTime
 from objectEncoder import ObjectEncoder
 from tables import *
+from threatLevel import ThreatLevel
 
 
 class NewConnection(json.JSONEncoder):
@@ -91,7 +91,8 @@ class NewConnection(json.JSONEncoder):
         if re.match(regex, line):
             client = re.search(regex, line).group(1)
 
-            if len(client) > 0 and client[-1] == '\'':  # ocurre por el \'?$ de la regex, este caso no se daria si solo tuviese un formato
+            # ocurre por el \'?$ de la regex, este caso no se daria si solo tuviese un formato
+            if len(client) > 0 and client[-1] == '\'':
                 client = client[0:-1]
 
             regex = r'^SSH-\d\.\d(-|_)([a-z0-9]+)(((_|-)(release|snapshot))?(\/|-|\.|_)(\d+.?)+)?'
@@ -103,7 +104,7 @@ class NewConnection(json.JSONEncoder):
                 self._client.load(client, client)
                 if self._verbose:
                     pass
-                    #print(client)
+                    # print(client)
             return True
 
         regex = r'^.*kex alg, key alg: b?\'(.*)\' b?\'(.*)\'$'
@@ -311,10 +312,10 @@ class NewConnection(json.JSONEncoder):
             # Los elementos sueltos los añade a un unoco json
             else:
                 if len(extendJson) == 0:
-                    extendJson = "{\"%s\": \"%s\""%(i, myDict[i])
+                    extendJson = "{\"%s\": \"%s\"" % (i, myDict[i])
                 else:
                     extendJson = "{}, \"{}\": \"{}\"".format(extendJson, i, myDict[i])
-                #print(json.dumps(myDict[i], cls=ObjectEncoder))
+                # print(json.dumps(myDict[i], cls=ObjectEncoder))
 
         extendJson = "%s}" % extendJson
         jsonUpdate = json.loads(extendJson)
@@ -322,7 +323,7 @@ class NewConnection(json.JSONEncoder):
         jsonUpdate.pop('IdSession', None)
 
         myJson = "{}\n{}".format(myJson, jsonUpdate)
-        #return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
+        # return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
         return myJson
 
     def loadClient(self, stringJson):
