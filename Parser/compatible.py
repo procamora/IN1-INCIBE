@@ -59,7 +59,6 @@ class Compatible(object):
 
         :return:
         """
-        startTotal = timer()
         output = str()
 
         with open(self._fileCompleted, 'r') as f:
@@ -69,14 +68,11 @@ class Compatible(object):
                     print('{}/{}'.format(num, len(totalLines)))
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
                     n = NewConnection.fromJson(json.loads(lineSession), json.loads('{}'), False)
-                    #print(n.getJSONCowrie())
+                    # print(n.getJSONCowrie())
                     output = '{}{}'.format(output, n.getJSONCowrie())
 
         with open(self._outputJson, 'w') as f:
-        	f.write(output)
-
-        endTotal = timer()
-        print('Tiempo total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
+            f.write(output)
 
 
 if __name__ == '__main__':

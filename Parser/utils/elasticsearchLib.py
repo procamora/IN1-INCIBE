@@ -21,7 +21,7 @@ class Elastic(object):
             raise ValueError("Connection failed, Exiting!!")
 
         self._verbose = verbose
-        self._doc_type = 'nested'
+        self._doc_type = 'object'  # object y nested
 
     def addMapping(self, myIndex, fileMapping):
         with open(fileMapping, 'r') as fp:
@@ -35,7 +35,7 @@ class Elastic(object):
         with open(file, 'r') as open_file:
             for entry in open_file:
                 if len(entry) > 2: # evitar lineas en blanco "\n"
-                    self._es.index(index=myIndex, doc_type='object', body=entry)
+                    self._es.index(index=myIndex, doc_type=self._doc_type, body=entry)
         # print('index: ' + res['result'])
         # but not deserialized
         # res = self._es.get(index=myIndex, doc_type=self._doc_type)

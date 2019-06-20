@@ -73,12 +73,11 @@ class CompleteSession(object):
         log = str()
 
         for i in self._jsonNonTrated:
-            myJson = {'geoip': i['geoip']}
-            log += '{}\n'.format(json.dumps(myJson))
+            log += '{}\n'.format(json.dumps(i['geoip']))
 
         for i in self._linesNoSession:
-            myJson = {'geoip': json.loads(i)['geoip']}
-            log += '{}\n'.format(json.dumps(myJson))
+            j = json.loads(i)['geoip']
+            log += '{}\n'.format(json.dumps(j))
 
         with open(self._fileNoSessionOutput, 'w') as f:
             f.write(log)
