@@ -322,7 +322,7 @@ class NewConnection(json.JSONEncoder):
         jsonUpdate['session'] = self._IdSession
         jsonUpdate.pop('IdSession', None)
 
-        myJson = "{}\n{}".format(myJson, jsonUpdate)
+        myJson = "{}\n{}".format(myJson, json.dumps(jsonUpdate))
         # return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
         return myJson
 

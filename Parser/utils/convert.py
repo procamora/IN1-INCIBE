@@ -3,6 +3,7 @@
 
 import argparse
 import datetime
+import platform
 import glob
 import os
 import re
@@ -36,14 +37,17 @@ def convert(directory):
         #print(egrep)
         os.system(egrep)
 
-        #sed = r'sed -i "s/\+0000/\.000\+0100/g" {}'.format(name)
-        #Command sed on MacOS
-        sed = r'gsed -i "s/\+0000/\.000\+0100/g" {}'.format(name)
+        if platform.system() == 'Linux':
+            sed = r'sed -i "s/\+0000/\.000\+0100/g" {}'.format(name)
+            chmod = 'chmod --reference {} {}'.format(fname, name)
+        else: # FIXME ponner elif con macos y windows
+            #Command sed on MacOS
+            sed = r'gsed -i "s/\+0000/\.000\+0100/g" {}'.format(name)
+            #Command chmod on MacOs
+            chmod = 'chmod `stat -f %A {}` {}'.format(fname, name)
+        
         os.system(sed)
-
-        #os.system('chmod --reference {} {}'.format(fname, name))
-        #Command chmod on MacOs
-        os.system('chmod `stat -f %A {}` {}'.format(fname, name))
+        os.system(chmod)
         os.system('rm {}'.format(fname))
 
 

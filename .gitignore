@@ -105,3 +105,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+Parser/output/
+
+Parser/inputLog/
+
+container/cowrie/log/
