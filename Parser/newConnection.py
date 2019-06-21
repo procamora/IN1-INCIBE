@@ -17,12 +17,12 @@ class NewConnection(json.JSONEncoder):
     Clase que contiene toda la informacion almacenada en el log de una NewConection
     """
 
-    def __init__(self, connectionAux, verbose, geoip2DB):
+    def __init__(self, connectionAux, logger, geoip2DB):
         """
         Constructor de clase
 
         :param connectionAux:
-        :param verbose:
+        :param logger:
         :param geoip2DB:
         """
         self._IdSession = connectionAux.getSession()
@@ -31,7 +31,7 @@ class NewConnection(json.JSONEncoder):
         self._isScanPort = bool()
         self._isBruteForceAttack = bool()
         self._connectionAux = connectionAux
-        self._verbose = verbose
+        self._logger = logger
         self._listCommandPending = list()
 
         self._client = TableClients()
@@ -102,9 +102,7 @@ class NewConnection(json.JSONEncoder):
                 self._client.load(client, nameClient)
             else:
                 self._client.load(client, client)
-                if self._verbose:
-                    pass
-                    # print(client)
+                self._logger.debug(client)
             return True
 
         regex = r'^.*kex alg, key alg: b?\'(.*)\' b?\'(.*)\'$'
@@ -206,20 +204,13 @@ class NewConnection(json.JSONEncoder):
         regex = r'.*Command( not)? found: (.*)'
         if re.match(regex, line):
             cmd = re.search(regex, line).group(2).strip()
-            # print('compruebo: .{}.'.format(cmd))
             for i in self._listInputs:
                 # Comprobamos que el comando sea el mismo y que no este puesto el resultado de la ejecucion
-                # print('.{}. == .{}.'.format(i.getInput(), cmd))
-                # print(not i.isUpdateSuccess())
                 if i.getInput() == cmd and not i.isUpdateSuccess():
-                    # print('ENTRO!!!!!')
                     regex = r'.*Command( not)? found: ({})'.format(NewConnection.escapeCommand(cmd))
-                    # print(regex)
                     if NewConnection.isCommandFound(line, regex):
-                        # print('VALIDO')
                         i.setSuccess(1)
                     else:
-                        # print('INVALIDO')
                         i.setSuccess(0)
             return True
 
@@ -264,7 +255,7 @@ class NewConnection(json.JSONEncoder):
 
         # Creo un diccionario solo con los valores que necesito y elimminando el _ de las variables privadas
         myDict = dict()
-        ignore = ['_connectionAux', '_verbose', '_listCommandPending', '_COMMANDS_DANGEROUS']
+        ignore = ['_connectionAux', '_logger', '_listCommandPending', '_COMMANDS_DANGEROUS']
         for i in self.__dict__:
             if i not in ignore:
                 myDict[i.replace('_', '')] = self.__dict__[i]
@@ -286,7 +277,7 @@ class NewConnection(json.JSONEncoder):
 
         # Creo un diccionario solo con los valores que necesito y elimminando el _ de las variables privadas
         myDict = dict()
-        ignore = ['_connectionAux', '_verbose', '_listCommandPending', '_COMMANDS_DANGEROUS']
+        ignore = ['_connectionAux', '_logger', '_listCommandPending', '_COMMANDS_DANGEROUS']
         for i in self.__dict__:
             if i not in ignore:
                 myDict[i.replace('_', '')] = self.__dict__[i]
@@ -315,7 +306,6 @@ class NewConnection(json.JSONEncoder):
                     extendJson = "{\"%s\": \"%s\"" % (i, myDict[i])
                 else:
                     extendJson = "{}, \"{}\": \"{}\"".format(extendJson, i, myDict[i])
-                # print(json.dumps(myDict[i], cls=ObjectEncoder))
 
         extendJson = "%s}" % extendJson
         jsonUpdate = json.loads(extendJson)
