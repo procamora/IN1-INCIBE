@@ -14,7 +14,7 @@ class Elastic(object):
             [ip],
             # http_auth=('user', 'secret'),
             # scheme="http",
-            verify_certs = True
+            verify_certs=True
         )
 
         if not self._es.ping():
@@ -34,7 +34,7 @@ class Elastic(object):
     def insert(self, myIndex, file):
         with open(file, 'r') as open_file:
             for entry in open_file:
-                if len(entry) > 2: # evitar lineas en blanco "\n"
+                if len(entry) > 2:  # evitar lineas en blanco "\n"
                     self._es.index(index=myIndex, doc_type=self._doc_type, body=entry)
         # print('index: ' + res['result'])
         # but not deserialized
@@ -124,4 +124,3 @@ if __name__ == '__main__':
     endTotal = timer()
     if arg.verbose:
         print('Tiempo total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
-

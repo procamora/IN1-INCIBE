@@ -24,6 +24,7 @@ class TableDownloads(Table):
         self._url = url
         self._outfile = outfile
         self._shasum = shasum
+        self._dangerous = 0
 
     def __getstate__(self):
         """
@@ -32,7 +33,7 @@ class TableDownloads(Table):
         :return:
         """
         return {'timestamp': self._timestamp, 'url': self._url, 'outfile': self._outfile,
-                'shasum': self._shasum}
+                'shasum': self._shasum, 'dangerous': self._dangerous}
 
     def isValid(self):
         """

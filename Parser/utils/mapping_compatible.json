@@ -178,6 +178,15 @@
             }
           }
         },
+        "dangerous": {
+          "type": "number",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
         "shasum": {
           "type": "text",
           "fields": {
