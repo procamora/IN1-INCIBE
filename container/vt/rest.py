@@ -137,6 +137,12 @@ def thread_downloadFile(file_url, file_name):
         # os.remove(file_name) # FIXME DESCOMENTAR
     app.logger.info("Thread %s: finishing", file_name)
 
+def getResponseJSON(myjson, response):
+    print(myjson)
+    if myjson['results']['response_code'] == 1:
+        return Response(response=response, status=HTTPStatus.OK, mimetype=MIME_TYPE)
+    else:
+        return Response(response=response, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
 
 @app.route('/', methods=['GET', 'POST'])
 def hello():
@@ -150,8 +156,9 @@ def virustotalMD5():
     if (md5 not in HASH_INPROGRESS) and (isNewMD5(md5)):
         HASH_INPROGRESS.append(md5)
         response = thread_analizeHash(md5)
-        if 'response_code' in json.loads(response).keys():
-            return Response(response=response, status=HTTPStatus.PARTIAL_CONTENT, mimetype=MIME_TYPE)
+        jsonResponse =  json.loads(response)
+        if 'response_code' in jsonResponse.keys():
+            return getResponseJSON(jsonResponse, response)
         else:
             return Response(response=response, status=HTTPStatus.GATEWAY_TIMEOUT, mimetype=MIME_TYPE)
     else:
@@ -160,6 +167,7 @@ def virustotalMD5():
             return Response(response=response['json'], status=HTTPStatus.OK, mimetype=MIME_TYPE)
         else: # fixme el md5 esta en la lista descargandose pero aun no esta en la bd
             return Response(response=response, status=HTTPStatus.INTERNAL_SERVER_ERROR, mimetype=MIME_TYPE)
+
 
 
 @app.route('/analize', methods=['POST'])
