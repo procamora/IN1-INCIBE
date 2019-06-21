@@ -12,16 +12,40 @@
               "type": "text"
             },
             "shortName": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "version": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "encryption": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "authentication": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             }
           }
         },
@@ -38,16 +62,40 @@
               "type": "text"
             },
             "continentCode": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "continentName": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "countryCode": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "countryName": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "ip": {
               "type": "ip"
@@ -63,20 +111,38 @@
         "listAuths": {
           "properties": {
             "password": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "success": {
               "type": "byte"
             },
             "timestamp": {
               "type": "date",
-              "format":"yyyy-MM-dd HH:mm:ss"
+              "format": "yyyy-MM-dd HH:mm:ss"
             },
             "username": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "credentials": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             }
           }
         },
@@ -90,17 +156,35 @@
               "format": "yyyy-MM-dd HH:mm:ss"
             },
             "input": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             }
           }
         },
         "listDownloads": {
           "properties": {
             "url": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "outfile": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "timestamp": {
               "type": "date",
@@ -118,26 +202,44 @@
           "type": "text"
         },
         "threatLevel": {
-          "type": "byte", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+          "type": "byte",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
         },
         "isScanPort": {
-          "type": "boolean", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+          "type": "boolean",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
         },
         "isBruteForceAttack": {
-          "type": "boolean", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+          "type": "boolean",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
         },
         "session": {
           "properties": {
             "endtime": {
               "type": "date",
-              "format":"yyyy-MM-dd HH:mm:ss"
+              "format": "yyyy-MM-dd HH:mm:ss"
             },
             "ip": {
               "type": "ip"
             },
             "starttime": {
               "type": "date",
-              "format":"yyyy-MM-dd HH:mm:ss"
+              "format": "yyyy-MM-dd HH:mm:ss"
             },
             "termsize": {
               "type": "text"

@@ -6,6 +6,7 @@ class Download(object):
     """
     Clase download, tiene informacion de una descarga realizada por la sesion
     """
+
     def __init__(self, url, hash1, path, timestamp):
         """
         Constructor de clase

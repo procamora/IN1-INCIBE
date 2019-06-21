@@ -11,15 +11,15 @@ class ThreatLevel(object):
                          'netstat', 'last', 'ls', 'ulimit', 'uname', 'history', 'unset', 'set', 'export']
 
         self._LEVEL_2 = ['sed', 'tar', 'if', 'while', 'do', 'chmod', 'cp', 'mkdir', 'mv', 'apt-get', 'apt',
-                         'touch', 'yum', 'dnf', 'passwd', 'mount', 'chown', 'bzip2','make', 'gcc', 'dd']
+                         'touch', 'yum', 'dnf', 'passwd', 'mount', 'chown', 'bzip2', 'make', 'gcc', 'dd']
 
         self._LEVEL_1 = ['wget', 'ssh', 'tftp', 'tftpd', 'scp', 'python', 'perl', 'nc', 'curl', 'ftpget',
                          'rm', 'sh', 'bash', 'busybox', 'reSuSEfirewall', 'SuSEfirewall', 'killall',
-                         'kill', 'pkill', 'sleep', 'sudo', 'nohup','poweroff', 'reboot', 'halt','exec']
+                         'kill', 'pkill', 'sleep', 'sudo', 'nohup', 'poweroff', 'reboot', 'halt', 'exec']
 
     def checkArgument(self):
-        #echo -ne
-        #history -c
+        # echo -ne
+        # history -c
         #
         return 1
 

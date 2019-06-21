@@ -9,16 +9,40 @@
               "type": "text"
             },
             "continentCode": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "continentName": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "countryCode": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "countryName": {
-              "type": "text", "fields" : { "keyword" : { "type" : "keyword", "ignore_above" : 256 } }
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
             },
             "ip": {
               "type": "ip"
