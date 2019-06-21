@@ -61,7 +61,8 @@ class TableSessions(Table):
 
         :return:
         """
-        return {'starttime': self._starttime, 'endtime': self._endtime, 'ip': self._ip, 'termsize': self._termsize}
+        return {'starttime': self._starttime, 'endtime': self._endtime, 'ip': self._ip, 'termsize': self._termsize,
+                'eventid': 'cowrie.session'}
 
     def isValid(self):
         """

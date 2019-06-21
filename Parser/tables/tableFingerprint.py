@@ -32,7 +32,7 @@ class TableFingerprint(Table):
 
         :return:
         """
-        return {'fingerprint': self._fingerprint}
+        return {'fingerprint': self._fingerprint, 'eventid': 'cowrie.client.fingerprint'}
 
     def isValid(self):
         """

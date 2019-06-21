@@ -88,7 +88,7 @@ class TableGeoIp(Table):
 
         return {'ip': self._ip, 'continentName': self._continentName, 'continentCode': self._continentCode,
                 'countryName': self._countryName, 'countryCode': self._countryCode, 'cityName': self._cityName,
-                'postalCode': self._postalCode, 'location': self._location}
+                'postalCode': self._postalCode, 'location': self._location, 'eventid': 'cowrie.session.geoip'}
 
     def isValid(self):
         """

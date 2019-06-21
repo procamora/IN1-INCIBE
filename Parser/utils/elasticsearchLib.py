@@ -4,6 +4,7 @@
 import argparse
 import configparser
 import json
+import sys
 from timeit import default_timer as timer
 
 import requests
@@ -76,12 +77,29 @@ class Elastic(object):
                 self._logger.debug('body != 0')
                 self._es.bulk(body, index=myIndex, doc_type=self._doc_type)
 
-    def search(self, myIndex):
-        res = self._es.search(index=myIndex, body={"query": {"match_all": {}}})
-        print(res)
-        print("Got %d Hits:" % res['hits']['total'])
-        # for hit in res['hits']['hits']:
-        #    print("%(timestamp)s %(author)s: %(text)s num: %(num)i" % hit["_source"])
+    def updateDangerousFiles(self):
+        self._logger.info('Update downloaded files')
+        jsonSearch = \
+            {
+                "query": {
+                    "term": {"dangerous": -1}
+                }
+            }
+        res = self._es.search(body=jsonSearch)
+        self._logger.info("Got {} pending files".format(res['hits']['total']))
+
+        for hit in res['hits']['hits']:
+            self._logger.debug(hit['_source'])
+            positives = self.urlAnalize(hit['_source']['url'])
+            if positives is not None:
+                jsonUpdate = \
+                    {
+                        "doc": {
+                            "dangerous": positives
+                        }
+                    }
+                self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
+            #
 
     def updateDownload(self, entry):
         t = json.loads(entry)
@@ -102,9 +120,24 @@ class Elastic(object):
             if r.status_code == 200:
                 return json.loads(r.text)['result']['positives']
             return None
-        except:
-            self._logger.warning("No se ha podido comprobar el fichero")
+        except requests.exceptions.ConnectionError:
+            self._logger.warning("No se ha podido comprobar el hash") # fixme traducir
             return None
+
+    def urlAnalize(self, urlAnalize):
+        data = '''{"url": "%s"}''' % urlAnalize
+        myjson = json.dumps(json.loads(data))
+        url = '{}/analize'.format(self._URL)
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+
+        try:
+            r = requests.post(url, data=myjson, headers=headers)
+            if r.status_code == 200:
+                return json.loads(r.text)['result']['positives']
+            return None
+        except requests.exceptions.ConnectionError:
+            self._logger.warning("No se ha podido comprobar la url") # fixme traducir
+            return 23
 
 
 def CreateArgParser():
@@ -122,13 +155,13 @@ def CreateArgParser():
     myParser = argparse.ArgumentParser(description='%(prog)s is a script to enter data in the elasticsearch database.',
                                        usage='{}'.format(example))
 
-    requiredNamed = myParser.add_argument_group('required named arguments')
-    requiredNamed.add_argument('-f', '--file', required=True, help='File to upload.')
-
+    myParser.add_argument('-f', '--file', help='File to upload.')
     myParser.add_argument('-m', '--mapping', help='Path of the file where the mapping of the attributes is defined.')
     myParser.add_argument('-ip', '--ip', help='IP address of the server where ElasticSearch is located.')
     myParser.add_argument('-i', '--index', help='Name of the index.')
     myParser.add_argument('-b', '--bulk', action='store_true', help='bulk mode (boolean).', default=True)
+    myParser.add_argument('-u', '--update', action='store_true', help='update dangerous files (boolean).',
+                          default=False)
     myParser.add_argument('-v', '--verbose', action='store_true', help='Verbose flag (boolean).', default=False)
 
     # tambien lo puedo poner en la misma linea
@@ -149,10 +182,17 @@ if __name__ == '__main__':
     if arg.mapping is not None:
         e.addMapping(arg.index, arg.mapping)
 
-    if arg.bulk:
-        e.bulk(arg.index, arg.file)
+    if arg.update:
+        e.updateDangerousFiles()
     else:
-        e.insert(arg.index, arg.file)
+        if arg.file is None:
+            logger.critical("The following arguments are required: -f/--file")
+            sys.exit(1)
+
+        if arg.bulk:
+            e.bulk(arg.index, arg.file)
+        else:
+            e.insert(arg.index, arg.file)
 
     endTotal = timer()
     logger.debug('Tiempo total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38

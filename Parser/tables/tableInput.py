@@ -52,7 +52,8 @@ class TableInput(Table):
 
         :return:
         """
-        return {'timestamp': self._timestamp, 'success': self._success, 'input': self._input}
+        return {'timestamp': self._timestamp, 'success': self._success, 'input': self._input,
+                'eventid': 'cowrie.command.input'}
 
     def isValid(self):
         """

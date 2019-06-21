@@ -41,7 +41,8 @@ class TableAuth(Table):
         :return:
         """
         return {'success': self._success, 'username': self._username, 'password': self._password,
-                'timestamp': self._timestamp, 'credentials': '{}/{}'.format(self._username, self._password)}
+                'timestamp': self._timestamp, 'credentials': '{}/{}'.format(self._username, self._password),
+                'eventid': 'cowrie.login'}
 
     def isValid(self):
         """

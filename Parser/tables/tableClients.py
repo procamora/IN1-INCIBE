@@ -57,7 +57,8 @@ class TableClients(Table):
         :return:
         """
         return {'version': self._version, 'shortName': self._shortName, 'kexAlg': self._kexAlg, 'keyAlg': self._keyAlg,
-                'encryption': self._encryption, 'authentication': self._authentication}
+                'encryption': self._encryption, 'authentication': self._authentication,
+                'eventid': 'cowrie.client.version'}
 
     def isValid(self):
         """

@@ -33,7 +33,7 @@ class TableDownloads(Table):
         :return:
         """
         return {'timestamp': self._timestamp, 'url': self._url, 'outfile': self._outfile,
-                'shasum': self._shasum, 'dangerous': self._dangerous}
+                'shasum': self._shasum, 'dangerous': self._dangerous, 'eventid': 'cowrie.session.file_download'}
 
     def isValid(self):
         """

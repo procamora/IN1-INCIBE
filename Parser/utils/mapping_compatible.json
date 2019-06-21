@@ -3,6 +3,15 @@
     "object": {
       "dynamic": "true",
       "properties": {
+        "eventid": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
         "kexAlg": {
           "type": "text"
         },
@@ -195,9 +204,6 @@
               "ignore_above": 256
             }
           }
-        },
-        "IdSession": {
-          "type": "text"
         },
         "idip": {
           "type": "text"

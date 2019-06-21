@@ -44,7 +44,7 @@ class TableTtylog(Table):
 
         :return:
         """
-        return {'ttylog': self._ttylog, 'size': self._size}
+        return {'ttylog': self._ttylog, 'size': self._size, 'eventid': 'cowrie.log.closed'}
 
     def isValid(self):
         """
