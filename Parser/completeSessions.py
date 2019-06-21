@@ -5,7 +5,7 @@ import configparser
 import json
 from timeit import default_timer as timer
 
-from functions import checkDir
+from functions import checkDir, writeFile
 from newConnection import NewConnection
 
 
@@ -57,8 +57,7 @@ class CompleteSession(object):
 
         :return:
         """
-        with open(self._fileSessionOutput, 'a') as f:
-            f.write(self._outputJson)
+        writeFile(self._outputJson, self._fileSessionOutput, 'a')
 
     def writeLogNoSession(self):
         """
@@ -76,8 +75,7 @@ class CompleteSession(object):
             j = json.loads(i)['geoip']
             log += '{}\n'.format(json.dumps(j))
 
-        with open(self._fileNoSessionOutput, 'w') as f:
-            f.write(log)
+        writeFile(log, self._fileNoSessionOutput, 'w')
 
     def run(self):
         """

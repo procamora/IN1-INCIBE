@@ -5,7 +5,7 @@ import logging
 import os
 import re
 
-import colorlog
+import colorlog  # https://medium.com/@galea/python-logging-example-with-color-formatting-file-handlers-6ee21d363184
 
 
 def getLogger(verbose):
@@ -26,6 +26,7 @@ def getLogger(verbose):
         log.setLevel(logging.DEBUG)
     else:
         log.setLevel(logging.INFO)
+
     return log
 
 

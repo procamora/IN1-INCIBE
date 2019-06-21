@@ -153,7 +153,6 @@ class NewConnection(json.JSONEncoder):
         if re.match(regex, line):
             # Se crea una tabla por cada comando, si estan en bloque se parten
             executeCommand = re.search(regex, line).group(1)
-            # for command in NewConnection.getListCommands(executeCommand):
             for command in NewConnection.getListCommands(executeCommand):
                 tableInput = TableInput()
                 # regex = r'([a-zA-Z]+ \-[a-zA-Z]+)|([a-zA-Z]+ [0-9]{3})|([a-zA-Z]+ \/[a-zA-Z]+\/[a-zA-Z]+)|([a-zA-Z]+ )'
@@ -193,8 +192,7 @@ class NewConnection(json.JSONEncoder):
                 self._listInputs.append(tableInput)
                 regex = r".*wget ((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+).*"
                 if re.match(regex, line):
-                    # if self._verbose:
-                    #    print('Ejecuto comando: wget {}'.format(re.search(regex, line).group(1)))
+                    self._logger.debug('Ejecuto comando: wget {}'.format(re.search(regex, line).group(1)))
                     self._listCommandPending.append(re.search(regex, line).group(1))
                     # cowrie.log.2018-12-05
                     # CMD: cd /tmp; wget google.com

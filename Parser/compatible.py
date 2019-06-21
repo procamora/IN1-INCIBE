@@ -6,7 +6,7 @@ import json
 import logging
 from timeit import default_timer as timer
 
-from functions import checkDir
+from functions import checkDir, writeFile
 from newConnection import NewConnection
 
 
@@ -48,5 +48,4 @@ class Compatible(object):
         end = timer()
         logging.debug('Time total: {}'.format(end - start))  # Time in seconds
 
-        with open(self._outputJson, 'w') as f:
-            f.write(output)
+        writeFile(output, self._outputJson, 'w')
