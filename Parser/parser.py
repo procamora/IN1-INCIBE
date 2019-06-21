@@ -3,7 +3,6 @@
 
 import configparser
 import glob
-import logging
 import re
 import traceback
 from timeit import default_timer as timer
@@ -12,9 +11,9 @@ import geoip2.database
 
 from connectionAux import ConnectionAux
 from download import Download
-from functions import parserIp, getSession, parserDateTime, parserIdtoSession, parserIdIp, writeFile, parserIpAnyLine, \
-    checkDir
 from newConnection import NewConnection
+from utils.functions import parserIp, getSession, parserDateTime, parserIdtoSession, parserIdIp, writeFile, \
+    parserIpAnyLine, checkDir
 
 
 class Parser(object):
@@ -81,10 +80,10 @@ class Parser(object):
                 self._logger.error('Unicode decode error in file: {}'.format(fname))
                 self._logger.debug(traceback.print_tb(error.__traceback__))
             end = timer()
-            self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
+            #self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
 
         endTotal = timer()
-        logging.info('Time total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
+        self._logger.info('Time total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
         self._geoip2DB.close()
 
     @staticmethod
@@ -140,7 +139,7 @@ class Parser(object):
                 if cont < fileSize:
                     s = file[cont]
                 else:
-                    logging.info(
+                    self._logger.info(
                         'No puedo con: {} en linea: {}'.format(connectionAuxDict[connection].getIp(), connection))
                     valid = False
 
@@ -221,5 +220,5 @@ class Parser(object):
         """
         # Aqui tenemos que recorrer cada comando y comprobar si tiene una wget pendiente de obtener un valor
         for command in self._listCommandWget:
-            # logging.info(command.toString())
+            # self._logger.info(command.toString())
             self.searchWget(newConnectionDict, command)

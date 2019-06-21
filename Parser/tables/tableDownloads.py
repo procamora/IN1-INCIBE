@@ -24,7 +24,7 @@ class TableDownloads(Table):
         self._url = url
         self._outfile = outfile
         self._shasum = shasum
-        self._dangerous = 0
+        self._dangerous = -1  # no analizado
 
     def __getstate__(self):
         """

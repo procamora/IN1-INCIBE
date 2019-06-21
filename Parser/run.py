@@ -4,11 +4,13 @@
 import argparse  # https://docs.python.org/3/library/argparse.html
 import configparser
 import os
+from timeit import default_timer as timer
+
 
 from compatible import Compatible
 from completeSessions import CompleteSession
-from functions import getLogger
 from parser import Parser
+from utils.functions import getLogger
 
 config = configparser.ConfigParser()
 config.sections()
@@ -45,6 +47,7 @@ if __name__ == "__main__":
     logger = getLogger(arg.verbose)
 
     logger.info('Start Parser')
+    start = timer()
     parser = Parser(logger, arg.output, arg.dir, 'DEFAULTS')
     parser.parse(arg.mmdb)
 
@@ -55,6 +58,8 @@ if __name__ == "__main__":
     logger.info('Start JSON Compatible')
     comp = Compatible(logger, arg.output, 'DEFAULTS')
     comp.run()
+    end = timer()
+    logger.info('Time total: {}'.format(end - start))  # Time in seconds
 
     # Eliminacion de ficheros auxiliares imnecesarios
     os.remove('{}/{}'.format(arg.output, config['DEFAULTS']['FILE_LOG_COMPLETED']))

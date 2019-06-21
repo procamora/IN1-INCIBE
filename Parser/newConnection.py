@@ -6,10 +6,10 @@ import json
 import re
 
 from connectionAux import ConnectionAux
-from functions import parserDateTime
 from objectEncoder import ObjectEncoder
 from tables import *
 from threatLevel import ThreatLevel
+from utils.functions import parserDateTime
 
 
 class NewConnection(json.JSONEncoder):

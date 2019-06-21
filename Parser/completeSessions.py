@@ -5,8 +5,8 @@ import configparser
 import json
 from timeit import default_timer as timer
 
-from functions import checkDir, writeFile
 from newConnection import NewConnection
+from utils.functions import checkDir, writeFile
 
 
 class CompleteSession(object):
@@ -89,7 +89,8 @@ class CompleteSession(object):
         with open(self._fileSession, 'r') as f:
             totalLines = f.readlines()
             for num, lineSession in enumerate(totalLines):
-                self._logger.debug('{}/{}'.format(num, len(totalLines)))
+                if num % 500 == 0:  # imprimimos cada 500 lineas
+                    self._logger.debug('{}/{}'.format(num, len(totalLines)))
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
                     lineSessionJson = json.loads(lineSession)
                     utilizado = self.search(lineSessionJson)

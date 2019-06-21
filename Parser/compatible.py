@@ -3,11 +3,10 @@
 
 import configparser
 import json
-import logging
 from timeit import default_timer as timer
 
-from functions import checkDir, writeFile
 from newConnection import NewConnection
+from utils.functions import checkDir, writeFile
 
 
 class Compatible(object):
@@ -41,11 +40,12 @@ class Compatible(object):
         with open(self._fileCompleted, 'r') as f:
             totalLines = f.readlines()
             for num, lineSession in enumerate(totalLines):
-                logging.debug('{}/{}'.format(num + 1, len(totalLines)))
+                if num % 500 == 0:  # imprimimos cada 500 lineas
+                    self._logger.debug('{}/{}'.format(num, len(totalLines)))
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
                     n = NewConnection.fromJson(json.loads(lineSession), json.loads('{}'), False)
                     output = '{}{}'.format(output, n.getJSONCowrie())
         end = timer()
-        logging.debug('Time total: {}'.format(end - start))  # Time in seconds
+        self._logger.info('Time total: {}'.format(end - start))  # Time in seconds
 
         writeFile(output, self._outputJson, 'w')
