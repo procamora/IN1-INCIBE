@@ -46,7 +46,6 @@ class TableGeoIp(Table):
         """
 
         if self._geoip2DB is None:  # Este caso solo se da cuando se carga la clase desde un json y se tiene esta info
-            # print('self._geoip2DB es None')
             return
 
         try:

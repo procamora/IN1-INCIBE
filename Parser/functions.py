@@ -1,8 +1,32 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
-import re
+import logging
 import os
+import re
+
+import colorlog
+
+
+def getLogger(verbose):
+    logFormat = '%(levelname)s - %(module)s - %(message)s'
+
+    bold_seq = '\033[1m'
+    colorlog_format = (
+        f'{bold_seq} '
+        '%(log_color)s '
+        f'{logFormat}'
+    )
+
+    colorlog.basicConfig(format=colorlog_format)
+    # logging.basicConfig(format=colorlog_format)
+    log = logging.getLogger()
+
+    if verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
+    return log
 
 
 def parserDateTime(line):
@@ -98,4 +122,3 @@ def checkDir(directory):
     """
     if not os.path.isdir(directory):
         os.mkdir(directory)
-

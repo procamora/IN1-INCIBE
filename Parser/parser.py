@@ -3,8 +3,8 @@
 
 import configparser
 import glob
+import logging
 import re
-import sys
 import traceback
 from timeit import default_timer as timer
 
@@ -22,11 +22,11 @@ class Parser(object):
     Clase Parser encargada de parsear los ficheros de log
     """
 
-    def __init__(self, verbose, output, workingDir, myConfig):
+    def __init__(self, logger, output, workingDir, myConfig):
         """
         Constructor de clase
 
-        :param verbose:
+        :param logger: Instancia de logging
         :param output: Directorio donde se guardan los ficheros de salida
         :param workingDir: Directorio donde se encuentran los log a analizar
         """
@@ -36,7 +36,7 @@ class Parser(object):
 
         checkDir(output)
 
-        self._verbose = verbose
+        self._logger = logger
         self._logCompleted = '{}/{}'.format(output, config[myConfig]['FILE_LOG_COMPLETED'])
         self._logAuxSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_SESSION'])
         self._logAuxNoSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_NOSESSION'])
@@ -67,7 +67,7 @@ class Parser(object):
         startTotal = timer()
         for fname in sorted(glob.glob('{}/cowrie.log.*'.format(self._workingDir))):
             # for fname in sorted(glob.glob('{}/analizame.log'.format(self._workingDir))):
-            print('Analizando: {}'.format(fname))
+            self._logger.info('Analizando: {}'.format(fname))
 
             self._connectionWget.clear()  # Vaciamos la lista/diccionario porque no tiene informacion util en otro log
             self._listCommandWget.clear()
@@ -78,15 +78,13 @@ class Parser(object):
                 newConnectionDict = self.setIPtoID(connectionAuxDict, fname)
                 self.getInfoLog(newConnectionDict, fname)
             except UnicodeDecodeError as error:
-                print('Unicode decode error in file: {}'.format(fname), file=sys.stderr)
-                if self._verbose:
-                    traceback.print_tb(error.__traceback__)
+                self._logger.error('Unicode decode error in file: {}'.format(fname))
+                self._logger.debug(traceback.print_tb(error.__traceback__))
             end = timer()
-            if self._verbose:
-                print('Tiempo fichero: {}'.format(end - start))  # Time in seconds, e.g. 5.38091952400282
+            self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
 
         endTotal = timer()
-        print('Tiempo total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
+        logging.info('Time total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
         self._geoip2DB.close()
 
     @staticmethod
@@ -142,8 +140,8 @@ class Parser(object):
                 if cont < fileSize:
                     s = file[cont]
                 else:
-                    # if self._verbose:
-                    print('No puedo con: {} en linea: {}'.format(connectionAuxDict[connection].getIp(), connection))
+                    logging.info(
+                        'No puedo con: {} en linea: {}'.format(connectionAuxDict[connection].getIp(), connection))
                     valid = False
 
             if valid:
@@ -152,7 +150,7 @@ class Parser(object):
                     pass  # Posteriores conexiones con la misma id,ip los omitimos porque iran al objeto ya creado
                 else:
                     newConnectionDict[connectionAuxDict[connection].getId()] = NewConnection(
-                        connectionAuxDict[connection], self._verbose, self._geoip2DB)
+                        connectionAuxDict[connection], self._logger, self._geoip2DB)
 
         return newConnectionDict
 
@@ -177,7 +175,7 @@ class Parser(object):
                     else:  # Lineas con id,ip pero que no tienen New connection y no estan en el diccionario
                         conAux = ConnectionAux(parserIpAnyLine(line), '', '')
                         conAux.setId(parserIdtoSession(line))
-                        newConnectionDict[info] = NewConnection(conAux, self._verbose, self._geoip2DB)
+                        newConnectionDict[info] = NewConnection(conAux, self._logger, self._geoip2DB)
                         newConnectionDict[info].addLine(line)
                 else:  # Lineas que no tienen id,ip
                     # Añadimos al fichero auxiliar de lineas no tratadas todas las lineas que no tengan la id,ip en el
@@ -223,5 +221,5 @@ class Parser(object):
         """
         # Aqui tenemos que recorrer cada comando y comprobar si tiene una wget pendiente de obtener un valor
         for command in self._listCommandWget:
-            # print(command.toString())
+            # logging.info(command.toString())
             self.searchWget(newConnectionDict, command)

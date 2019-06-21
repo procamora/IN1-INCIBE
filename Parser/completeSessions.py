@@ -5,16 +5,16 @@ import configparser
 import json
 from timeit import default_timer as timer
 
-from newConnection import NewConnection
 from functions import checkDir
+from newConnection import NewConnection
 
 
 class CompleteSession(object):
-    def __init__(self, verbose, output, myConfig):
+    def __init__(self, logger, output, myConfig):
         """
         Constructor de clase
 
-        :param verbose:
+        :param logger:
         :param output: Directorio donde se guardan los ficheros de salida
         """
         config = configparser.ConfigParser()
@@ -23,7 +23,7 @@ class CompleteSession(object):
 
         checkDir(output)
 
-        self._verbose = verbose
+        self._logger = logger
 
         self._fileSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_SESSION'])
         self._fileNoSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_NOSESSION'])
@@ -42,15 +42,12 @@ class CompleteSession(object):
         :param lineSessionJson:
         :return:
         """
-        # print(json.loads(lineSession))
         for lineNoSession in self._linesNoSession:
             lineNoSessionJson = json.loads(lineNoSession)
             if len(lineNoSession) > 2 and lineSessionJson['idip'] == lineNoSessionJson['idip']:
                 a = NewConnection.fromJson(lineSessionJson, lineNoSessionJson)
-                # print(a.getJSON())
                 self._outputJson += a.getJSON()
                 self._linesNoSession.remove(lineNoSession)  # Elimino la linea usada mejorado la eficiencia
-                # print(len(self._linesNoSession))
                 return True
         return False
 
@@ -94,17 +91,15 @@ class CompleteSession(object):
         with open(self._fileSession, 'r') as f:
             totalLines = f.readlines()
             for num, lineSession in enumerate(totalLines):
-                if self._verbose:
-                    print('{}/{}'.format(num, len(totalLines)))
+                self._logger.debug('{}/{}'.format(num, len(totalLines)))
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
                     lineSessionJson = json.loads(lineSession)
                     utilizado = self.search(lineSessionJson)
                     if not utilizado:
                         self._jsonNonTrated.append(lineSessionJson)
-                        # print('non update: {}'.format(lineSession.replace('\n', '')))
 
         self.writeLogSession()
         self.writeLogNoSession()
 
         endTotal = timer()
-        print('Tiempo total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
+        self._logger.info('Time total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.3802

@@ -10,6 +10,7 @@ class ObjectEncoder(json.JSONEncoder):
     """
     Clase para codificar una clase en un objeto JSON
     """
+
     def default(self, obj):
         """
         Metodo que se llama implicitamente cuando hacemos un dumps de una instancia de la clase, crea un diccionario
@@ -18,13 +19,9 @@ class ObjectEncoder(json.JSONEncoder):
         :param obj:
         :return:
         """
-        # print(obj.__class__.__name__)
         if hasattr(obj, "__getstate__"):
-            # print(self.default(obj.__getstate__()))
             return self.default(obj.__getstate__())
         elif hasattr(obj, "__dict__"):
-            # print('fail {}'.format(obj))
-            # print(obj.__class__.__name__)
             d = dict(
                 (key, value)
                 for key, value in inspect.getmembers(obj)
@@ -40,4 +37,3 @@ class ObjectEncoder(json.JSONEncoder):
             )
             return self.default(d)
         return obj
-
