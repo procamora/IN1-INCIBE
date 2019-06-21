@@ -179,7 +179,7 @@
           }
         },
         "dangerous": {
-          "type": "number",
+          "type": "integer",
           "fields": {
             "keyword": {
               "type": "keyword",

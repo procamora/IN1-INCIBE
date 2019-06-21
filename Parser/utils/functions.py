@@ -8,7 +8,11 @@ import re
 import colorlog  # https://medium.com/@galea/python-logging-example-with-color-formatting-file-handlers-6ee21d363184
 
 
-def getLogger(verbose):
+def getLogger(verbose, name='Parser'):
+    # Desabilita log de modulos
+    #for _ in ("boto", "elasticsearch", "urllib3"):
+    #    logging.getLogger(_).setLevel(logging.CRITICAL)
+
     logFormat = '%(levelname)s - %(module)s - %(message)s'
 
     bold_seq = '\033[1m'
@@ -20,7 +24,7 @@ def getLogger(verbose):
 
     colorlog.basicConfig(format=colorlog_format)
     # logging.basicConfig(format=colorlog_format)
-    log = logging.getLogger()
+    log = logging.getLogger(name)
 
     if verbose:
         log.setLevel(logging.DEBUG)
