@@ -382,7 +382,12 @@ class NewConnection(json.JSONEncoder):
     @staticmethod
     def getListCommands(commands):
         listCommands = list()
-        regex = r'(\;|\&+|\|{2})'
+        # Casos especificos donde el comando lleva una regex
+        if re.search(r'(grep -E)', commands):
+            regex = r'(\;|\&+|\|{2})'
+        else:
+            regex = r'(\;|\&+|\|+)'
+
         for c in re.split(regex, commands):
             if not re.match(regex, c) and len(c) > 0:
                 listCommands.append(c.strip())
