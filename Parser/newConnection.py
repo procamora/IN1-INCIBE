@@ -382,7 +382,7 @@ class NewConnection(json.JSONEncoder):
     @staticmethod
     def getListCommands(commands):
         listCommands = list()
-        regex = r'(\;|\&\&|\|\|)'
+        regex = r'(\;|\&+|\|{2})'
         for c in re.split(regex, commands):
             if not re.match(regex, c) and len(c) > 0:
                 listCommands.append(c.strip())

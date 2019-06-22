@@ -45,6 +45,7 @@ class Compatible(object):
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
                     n = NewConnection.fromJson(json.loads(lineSession), json.loads('{}'), False)
                     output = '{}{}'.format(output, n.getJSONCowrie())
+            self._logger.debug('{}/{}'.format(len(totalLines), len(totalLines)))
         end = timer()
         self._logger.info('Time total: {}'.format(end - start))  # Time in seconds
 
