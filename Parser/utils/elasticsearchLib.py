@@ -70,12 +70,44 @@ class Elastic(object):
                     if len(body) > incremet:
                         contProgress += (incremet // 2)
                         self._logger.debug('{}/{}'.format(contProgress, count_lines))
-                        self._es.bulk(body, index=myIndex, doc_type=self._doc_type)
+                        response = self._es.bulk(body, index=myIndex, doc_type=self._doc_type)
+                        if self.isError(response):
+                            self._logger.critical('Exiting...')
+                            sys.exit(1)
                         body.clear()
             # Enviamos el resto de datos
             if len(body) != 0:
-                self._logger.debug('body != 0')
-                self._es.bulk(body, index=myIndex, doc_type=self._doc_type)
+                self._logger.debug('{}/{}'.format(count_lines, count_lines))
+                response = self._es.bulk(body, index=myIndex, doc_type=self._doc_type)
+                if self.isError(response):
+                    self._logger.critical('Exiting...')
+                    sys.exit(1)
+
+    def isError(self, response):
+        """
+        Metodo que comrpueba si la respuesta de bulk o insert es correcta, en caso de que no sea correcta muestra
+        algunos de los errores y despues informa para finalizar la ejecucion del programa
+
+        :param response:
+        :return:
+        """
+
+        maxErrors = 20
+        actualErros = 0
+        if response['errors']:
+            self._logger.warning('Errors found: {}'.format(len(response['items'])))
+            for i in response['items']:
+                if i['index']['status'] == 400:
+                    self._logger.debug(response['errors'])
+                    self._logger.debug(i)
+                    self._logger.warning(i['index']['error'])
+                    actualErros += 1
+                    if actualErros == maxErrors:
+                        return True
+
+        if actualErros != 0:
+            return True
+        return False
 
     def updateDangerousFiles(self):
         self._logger.info('Update downloaded files')
@@ -121,7 +153,7 @@ class Elastic(object):
                 return json.loads(r.text)['result']['positives']
             return None
         except requests.exceptions.ConnectionError:
-            self._logger.warning("No se ha podido comprobar el hash") # fixme traducir
+            self._logger.warning("No se ha podido comprobar el hash")  # fixme traducir
             return None
 
     def urlAnalize(self, urlAnalize):
@@ -136,7 +168,7 @@ class Elastic(object):
                 return json.loads(r.text)['result']['positives']
             return None
         except requests.exceptions.ConnectionError:
-            self._logger.warning("No se ha podido comprobar la url") # fixme traducir
+            self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
             return 23
 
 
@@ -175,7 +207,7 @@ if __name__ == '__main__':
     startTotal = timer()
 
     arg = CreateArgParser()
-    logger = getLogger(arg.verbose)
+    logger = getLogger(arg.verbose, 'elk')
 
     e = Elastic(arg.ip, logger)
 

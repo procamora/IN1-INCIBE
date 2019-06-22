@@ -32,6 +32,9 @@ class TableSessions(Table):
     def getEndtime(self):
         return self._endtime
 
+    def getStarttime(self):
+        return self._starttime
+
     def setTermsize(self, termsize):
         """
         Metodo para estabecer el tamaño de la terminar

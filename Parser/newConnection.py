@@ -40,6 +40,7 @@ class NewConnection(json.JSONEncoder):
         self._session = TableSessions()
         self._geoip = TableGeoIp(geoip2DB)
         self._fingerprint = TableFingerprint()
+        self._eventid = 'cowrie.extend'
 
         self._listInputs = list()
         self._listAuths = list()
@@ -205,7 +206,7 @@ class NewConnection(json.JSONEncoder):
             for i in self._listInputs:
                 # Comprobamos que el comando sea el mismo y que no este puesto el resultado de la ejecucion
                 if i.getInput() == cmd and not i.isUpdateSuccess():
-                    regex = r'.*Command( not)? found: ({})'.format(NewConnection.escapeCommand(cmd))
+                    regex = r'.*Command( not)? found: ({})'.format(re.escape(cmd))  # Escapamos el comand para la regex
                     if NewConnection.isCommandFound(line, regex):
                         i.setSuccess(1)
                     else:
@@ -285,6 +286,8 @@ class NewConnection(json.JSONEncoder):
         for i in myDict:
             # Si solo es una tabla lo converte a json y añande la sesion
             if isinstance(myDict[i], Table):
+                if isinstance(myDict[i], TableSessions) and len(myDict[i].getEndtime()) == 0:
+                    myDict[i].setEndtime(myDict[i].getStarttime())
                 jsonTable = myDict[i].toJSON()
                 jsonUpdate = json.loads(jsonTable)
                 jsonUpdate['session'] = self._IdSession
@@ -308,6 +311,9 @@ class NewConnection(json.JSONEncoder):
         extendJson = "%s}" % extendJson
         jsonUpdate = json.loads(extendJson)
         jsonUpdate['session'] = self._IdSession
+        # elasticsearch usa booleanos en minusculas
+        jsonUpdate['isScanPort'] = jsonUpdate['isScanPort'].lower()
+        jsonUpdate['isBruteForceAttack'] = jsonUpdate['isBruteForceAttack'].lower()
         jsonUpdate.pop('IdSession', None)
 
         myJson = "{}\n{}".format(myJson, json.dumps(jsonUpdate))
@@ -413,19 +419,6 @@ class NewConnection(json.JSONEncoder):
             return True
         else:
             return False
-
-    @staticmethod
-    def escapeCommand(command):
-        """
-
-        :param command:
-        :return:
-        """
-
-        """return command.replace('.', r'\.').replace('?', r'\?').replace(';', r'\;').replace('-', r'\-') \
-            .replace('/', r'\/').replace('+', r'\+').replace('*', r'\*').replace('(', r'\(').replace(')', r'\)') \
-            .replace('{', r'\}').replace('}', r'\}').replace(',', r'\,')"""  # fixme borrar en un futuro
-        return re.escape(command)
 
     @staticmethod
     def fromJson(jsonSession, jsonNoSession, simple=True):
