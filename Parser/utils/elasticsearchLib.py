@@ -150,14 +150,14 @@ class Elastic(object):
         try:
             r = requests.get(url, headers=headers)
             if r.status_code == 200:
-                return json.loads(r.text)['result']['positives']
+                return json.loads(r.text)['results']['positives']
             return None
         except requests.exceptions.ConnectionError:
             self._logger.warning("No se ha podido comprobar el hash")  # fixme traducir
             return None
 
-    def urlAnalize(self, urlAnalize):
-        data = '''{"url": "%s"}''' % urlAnalize
+    def urlAnalize(self, url_analize):
+        data = '''{"url": "%s"}''' % url_analize
         myjson = json.dumps(json.loads(data))
         url = '{}/analize'.format(self._URL)
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
@@ -165,7 +165,7 @@ class Elastic(object):
         try:
             r = requests.post(url, data=myjson, headers=headers)
             if r.status_code == 200:
-                return json.loads(r.text)['result']['positives']
+                return json.loads(r.text)['results']['positives']
             return None
         except requests.exceptions.ConnectionError:
             self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
