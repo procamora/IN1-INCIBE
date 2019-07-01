@@ -37,16 +37,22 @@ class Compatible(object):
         """
         output = str()
         start = timer()
+        writeFile(output, self._outputJson, 'w')
+
         with open(self._fileCompleted, 'r') as f:
             totalLines = f.readlines()
             for num, lineSession in enumerate(totalLines):
-                if num % 500 == 0:  # imprimimos cada 500 lineas
+                if num % 2000 == 0:  # imprimimos cada 500 lineas
                     self._logger.debug('{}/{}'.format(num, len(totalLines)))
+                    # Guaredo n conexiones y reinicio el string
+                    writeFile(output, self._outputJson, 'a')
+                    output = str()
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
                     n = NewConnection.fromJson(json.loads(lineSession), json.loads('{}'), False)
                     output = '{}{}'.format(output, n.getJSONCowrie())
             self._logger.debug('{}/{}'.format(len(totalLines), len(totalLines)))
+        # imprimo las ultimas lineas
+        writeFile(output, self._outputJson, 'a')
+
         end = timer()
         self._logger.info('Time total: {}'.format(end - start))  # Time in seconds
-
-        writeFile(output, self._outputJson, 'w')

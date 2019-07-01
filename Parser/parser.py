@@ -139,7 +139,7 @@ class Parser(object):
                 if cont < fileSize:
                     s = file[cont]
                 else:
-                    self._logger.info(
+                    self._logger.warning(
                         'No puedo con: {} en linea: {}'.format(connectionAuxDict[connection].getIp(), connection))
                     valid = False
 

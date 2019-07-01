@@ -96,6 +96,7 @@ class CompleteSession(object):
                     utilizado = self.search(lineSessionJson)
                     if not utilizado:
                         self._jsonNonTrated.append(lineSessionJson)
+            self._logger.debug('{}/{}'.format(len(totalLines), len(totalLines)))
 
         self.writeLogSession()
         self.writeLogNoSession()

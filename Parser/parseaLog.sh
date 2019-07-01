@@ -2,15 +2,11 @@
 
 function parser() {
 
-	python3 run.py -d /run/media/procamora/BackUp/LOG_INCIBE/S3/ -o /run/media/procamora/BackUp/LOG_INCIBE/S3_JSON/ -v
-	python3 run.py -o /run/media/procamora/BackUp/LOG_INCIBE/S3_JSON/ -v
+	python3 run.py -d /home/procamora/Documents/LogsCowrie/github_scriptzteam/ -o /home/procamora/Documents/LogsCowrie/output_scriptzteam/ -v
+	python3 run.py -d /home/procamora/Documents/LogsCowrie/raspberrypi/ -o /home/procamora/Documents/LogsCowrie/output_raspberry/ -v
+	python3 run.py -d /home/procamora/Documents/LogsCowrie/docker/ -o /home/procamora/Documents/LogsCowrie/output_docker/ -v
+	python3 run.py -d /home/procamora/Documents/LogsCowrie/github_kareiva/ -o /home/procamora/Documents/LogsCowrie/output_kareiva/ -v
 
-
-	python3 run.py -d /run/media/procamora/BackUp/LOG_INCIBE/S6/ -o /run/media/procamora/BackUp/LOG_INCIBE/S6_JSON/ -v
-	python3 run.py -o /run/media/procamora/BackUp/LOG_INCIBE/S6_JSON/ -v
-
-	python3 run.py -d /run/media/procamora/BackUp/LOG_INCIBE/S7/ -o /run/media/procamora/BackUp/LOG_INCIBE/S7_JSON/ -v
-	python3 run.py -o /run/media/procamora/BackUp/LOG_INCIBE/S7_JSON/ -v
 
 }
 
@@ -31,5 +27,5 @@ function elk() {
 }
 
 
-#parser
-elk
+parser
+#elk
