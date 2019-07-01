@@ -111,3 +111,5 @@ Parser/output/
 Parser/inputLog/
 
 container/cowrie/log/
+
+container/malware/\.idea/

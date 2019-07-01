@@ -30,13 +30,13 @@ services:
     links:
       - elasticsearch
 
-  rest_vt:
+  rest_malware:
     build:
-      context: vt/
+      context: malware/
       dockerfile: Dockerfile
-    container_name: rest_vt
+    container_name: rest_malware
     volumes:
-      - ./vt/virustotal.db:/root/virustotal.db
+      - ./malware/virustotal.db:/root/virustotal.db
     ports:
       - 8080:8080
     networks:
