@@ -4,13 +4,14 @@
 import argparse
 import configparser
 import json
+import re
 import sys
 from timeit import default_timer as timer
 
 import requests
 from elasticsearch import Elasticsearch
 
-from functions import getLogger
+from functions import getLogger, get_shasum
 
 
 class Elastic(object):
@@ -118,11 +119,11 @@ class Elastic(object):
                 }
             }
         res = self._es.search(body=jsonSearch)
-        self._logger.info("Got {} pending files".format(res['hits']['total']))
+        self._logger.info("Got {} files".format(res['hits']['total']))
 
         for hit in res['hits']['hits']:
             self._logger.debug(hit['_source'])
-            positives = self.urlAnalize(hit['_source']['url'])
+            positives = self.malware_analize_url(hit['_source']['url'])
             if positives is not None:
                 jsonUpdate = \
                     {
@@ -131,21 +132,82 @@ class Elastic(object):
                         }
                     }
                 self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
-            #
 
-    def updateDownload(self, entry):
+    def createJsonDownloads(self):
+        self._logger.info('search wget/curl files')
+        jsonSearchWgets = \
+            {
+                "size": 10000,
+                "query": {
+                    "term": {
+                        "binary": "wget"
+                    }
+                }
+            }
+
+        response = self._es.search(body=jsonSearchWgets)
+        self._logger.info("Got {} files".format(response['hits']['total']))
+
+        # print(json.dumps(response))
+        json_insert = list()
+        for hit in response['hits']['hits']:
+            self._logger.debug(hit['_source'])
+            print(hit['_source']['input'])
+            jsonSearchDownloads = \
+                {
+                    "query": {
+                        "bool": {
+                            "must": [
+                                {"match": {"eventid": "cowrie.session.file_download"}},
+                                {"match": {"session": hit['_source']['session']}},
+                                {"match": {"url": hit['_source']['input']}}
+                            ]
+                        }
+                    }
+                }
+            responseDownloads = self._es.search(body=jsonSearchDownloads)
+            if responseDownloads['hits']['total'] == 0:
+                pass
+                # FIXME PONER LA HORA CORRECTAMENTE
+                regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
+                search_url = re.search(regex, hit['_source']['input'])
+                if search_url:
+                    url = search_url.group(1)
+                    entry = self.create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url)
+                    if entry is not None:
+                        print(entry)
+                        self._es.index(index=hit['_index'], doc_type=self._doc_type, body=entry)
+
+
+    def updateDownload(self, entry) -> dict:
         t = json.loads(entry)
         if 'dangerous' in t:
             self._logger.info(t)
-            positives = self.md5(t['shasum'])
+            positives = self.malware_analize_shasum(t['shasum'])
             if positives is not None:
                 self._logger.info('ACTUALIZAMOS CON {}'.format(positives))
                 t['dangerous'] = positives
                 self._logger.debug(entry)
         return json.dumps(t)
 
-    def md5(self, md5hex):
-        url = '{}/analize?md5={}'.format(self._URL, md5hex)
+    def create_json_donwload(self, session: str, timestamp: str, url: str) -> str:
+        shasum = get_shasum(url)
+        if shasum is None:
+            self._logger.warning('Can not be downloaded {}'.format(url))
+            return None
+        outfile = 'var/lib/cowrie/downloads/{}'.format(shasum)
+
+        positives = self.malware_analize_shasum(shasum)
+        if positives is not None:
+            dangerous = positives
+        else:
+            dangerous = -1
+        json_table = {'session': session, 'timestamp': timestamp, 'url': url, 'outfile': outfile, 'shasum': shasum,
+                      'dangerous': dangerous, 'eventid': 'cowrie.session.file_download'}
+        return json_table  # fixme conformar que esta en string con las comillas correctas
+
+    def malware_analize_shasum(self, shasum) -> dict:
+        url = '{}/analize?md5={}'.format(self._URL, shasum)
         headers = {'Accept': 'application/json'}
         try:
             r = requests.get(url, headers=headers)
@@ -156,8 +218,8 @@ class Elastic(object):
             self._logger.warning("No se ha podido comprobar el hash")  # fixme traducir
             return None
 
-    def urlAnalize(self, url_analize):
-        data = '''{"url": "%s"}''' % url_analize
+    def malware_analize_url(self, url_analize) -> dict:
+        data = '{"url": "%s"}' % url_analize
         myjson = json.dumps(json.loads(data))
         url = '{}/analize'.format(self._URL)
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
@@ -169,7 +231,7 @@ class Elastic(object):
             return None
         except requests.exceptions.ConnectionError:
             self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
-            return 23
+            return None
 
 
 def CreateArgParser():
@@ -215,7 +277,8 @@ if __name__ == '__main__':
         e.addMapping(arg.index, arg.mapping)
 
     if arg.update:
-        e.updateDangerousFiles()
+        # e.updateDangerousFiles()
+        e.createJsonDownloads()
     else:
         if arg.file is None:
             logger.critical("The following arguments are required: -f/--file")
