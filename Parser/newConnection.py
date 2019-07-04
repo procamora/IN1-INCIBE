@@ -157,40 +157,7 @@ class NewConnection(json.JSONEncoder):
             executeCommand = re.search(regex, line).group(1)
             for command in NewConnection.getListCommands(executeCommand):
                 tableInput = TableInput()
-                # regex = r'([a-zA-Z]+ \-[a-zA-Z]+)|([a-zA-Z]+ [0-9]{3})|([a-zA-Z]+ \/[a-zA-Z]+\/[a-zA-Z]+)|([a-zA-Z]+ )'
-                # Acorta comandos ej: /gisdfoewrsfdf/bin
-                regex = r'^(\/[a-zA-Z]+\/[a-zA-Z]+\/?)'
-                # Acortamos a un solo directorio
-                # regex1 = r'^(\/[a-zA-Z]+\/)'
-                # Acorta comandos ej: cd /bin/bash/sh en cd /bin/bash/
-                regex_1 = r'^([a-zA-Z]+\s\/[a-zA-Z]+\/?[A-Za-z]+\/?)'
-                # Acortamos a un solo directorio
-                # regex_1_1 = r'^([a-zA-Z]+\s\/[a-zA-Z]+\/?)'
-                # Acorta el resto de comandos echo -e
-                regex_2 = r'^([a-zA-Z]+\s(((\-[a-zA-Z]+)|([0-9]{3}(?!\.)))*))'
-                #Acorta comando simple, exit, echo, ls, vi
-                regex_3 = r'^[a-zA-Z]+'
-
-                if re.match(regex_1, command):
-                    # if len(re.search(regex_1_1, command).group(0)) == 0:
-                    # print(command)
-                    tableInput.load(parserDateTime(line), re.search(regex_1, command).group(0))
-                    # print("."+re.search(regex_1_1, command).group(0)+"."+command)
-                elif re.match(regex, command):
-                    # if len(re.search(regex1, command).group(0)) == 0:
-                    # print(command)
-                    tableInput.load(parserDateTime(line), re.search(regex, command).group(0))
-                    # print("."+re.search(regex1, command).group(0)+".")
-                elif re.match(regex_2, command):
-                    # if len(re.search(regex_2, command).group(0)) == 0:
-                    # print(command)
-                    tableInput.load(parserDateTime(line), re.search(regex_2, command).group(0))
-                    # print("."+re.search(regex_2, command).group(0)+"."+command)
-                elif re.match(regex_3,command):
-                    # print(re.search(regex_3, command).group(0))
-                    tableInput.load(parserDateTime(line), re.search(regex_3, command).group(0))
-                # else:
-                # tableInput.load(parserDateTime(line),command)
+                tableInput.load(parserDateTime(line), command)
                 self._listInputs.append(tableInput)
                 regex = r".*wget ((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+).*"
                 if re.match(regex, command):
@@ -395,24 +362,7 @@ class NewConnection(json.JSONEncoder):
         return listCommands
 
     @staticmethod
-    def getListCommandsSeparate(commands):
-        """
-        Metodo utilizado para generar vectores de ML y parsear líneas de comandos en comandos simples.
-        No se eliminan las opciones introducidas al comando (primera prueba)
-
-        :param commands:
-        :return:
-        """
-        listCommands = list()
-        regex = r'\;|\&+|\|+ '
-        regex1 = r' '
-        for c in re.split(regex, commands):
-            if not re.match(regex, c) and re.match(regex1, c) and len(c) > 0:
-                listCommands.append(c.strip())
-        return listCommands
-
-    @staticmethod
-    def isCommandFound(line, regex):
+    def isCommandFound(line, regex) -> bool:
         """
         Metodo para comprobar si un comando se ha ejecutado con exito, avanza las lineas necesarias
         hasta llegar a la linea que indica si ha tenido exito la ejecucion del comando
