@@ -193,9 +193,9 @@ class NewConnection(json.JSONEncoder):
                 # tableInput.load(parserDateTime(line),command)
                 self._listInputs.append(tableInput)
                 regex = r".*wget ((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+).*"
-                if re.match(regex, line):
-                    self._logger.debug('Ejecuto comando: wget {}'.format(re.search(regex, line).group(1)))
-                    self._listCommandPending.append(re.search(regex, line).group(1))
+                if re.match(regex, command):
+                    self._logger.debug('Ejecuto comando: wget {}'.format(re.search(regex, command).group(1)))
+                    self._listCommandPending.append(re.search(regex, command).group(1))
                     # cowrie.log.2018-12-05
                     # CMD: cd /tmp; wget google.com
                     # Downloaded URL (b'http://google.com')
