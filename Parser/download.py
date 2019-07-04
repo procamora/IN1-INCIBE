@@ -1,13 +1,15 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import NoReturn
+
 
 class Download(object):
     """
     Clase download, tiene informacion de una descarga realizada por la sesion
     """
 
-    def __init__(self, url, hash1, path, timestamp):
+    def __init__(self, url, hash1, path, timestamp) -> NoReturn:
         """
         Constructor de clase
 
@@ -21,7 +23,7 @@ class Download(object):
         self._path = path
         self._timestamp = timestamp
 
-    def getUrl(self):
+    def getUrl(self) -> str:
         """
         Metodo para obtener la url donde se encuentra el fichero
 
@@ -29,7 +31,7 @@ class Download(object):
         """
         return self._url
 
-    def getHash(self):
+    def getHash(self) -> str:
         """
         Metodo para obtener el hash del fichero
 
@@ -37,7 +39,7 @@ class Download(object):
         """
         return self._hash
 
-    def getPath(self):
+    def getPath(self) -> str:
         """
         Metodo para obtener la ruta donde esta guardado el fichero
 
@@ -45,7 +47,7 @@ class Download(object):
         """
         return self._path
 
-    def getTimestamp(self):
+    def getTimestamp(self) -> str:
         """
         Metodo para obtener el tiemstamp de la descarga del fichero
 
@@ -53,7 +55,7 @@ class Download(object):
         """
         return self._timestamp
 
-    def toString(self):
+    def toString(self) -> str:
         """
         Metodo para imprimir los valores de la clase
 

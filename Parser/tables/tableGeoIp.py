@@ -1,6 +1,8 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import NoReturn, Dict, Any
+
 import geoip2.database
 from geoip2.errors import AddressNotFoundError
 
@@ -12,7 +14,7 @@ class TableGeoIp(Table):
     Clase que contiene los campos de la tabla ipinfo
     """
 
-    def __init__(self, geoip2DB):
+    def __init__(self, geoip2DB) -> NoReturn:
         """
         Constructor de clase
         """
@@ -27,7 +29,7 @@ class TableGeoIp(Table):
         self._postalCode = self._DEFAULT_VALUE
         self._location = '0,0'
 
-    def setIp(self, ip):
+    def setIp(self, ip) -> NoReturn:
         """
         Metedo establece la ip y obtiene la informacion geografica
 
@@ -38,7 +40,7 @@ class TableGeoIp(Table):
             self._ip = ip
             self.loadGeoIp()
 
-    def loadGeoIp(self):
+    def loadGeoIp(self) -> NoReturn:
         """
         Metodo que obtiene de la base de datos toda la informacion geografica de la ip
 
@@ -69,7 +71,8 @@ class TableGeoIp(Table):
         if response.location.latitude is not None and response.location.longitude is not None:
             self._location = '{lat},{lon}'.format(lat=response.location.latitude, lon=response.location.longitude)
 
-    def loadGeoIpExtended(self, continentName, continentCode, countryName, countryCode, cityName, postalCode, location):
+    def loadGeoIpExtended(self, continentName, continentCode, countryName, countryCode, cityName, postalCode,
+                          location) -> NoReturn:
         if len(continentName) > 0:
             self._continentName = continentName
             self._continentCode = continentCode
@@ -79,7 +82,7 @@ class TableGeoIp(Table):
             self._postalCode = postalCode
             self._location = location
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Redefino este metodo para generar los atributos que quiero serializar
 
@@ -90,7 +93,7 @@ class TableGeoIp(Table):
                 'countryName': self._countryName, 'countryCode': self._countryCode, 'cityName': self._cityName,
                 'postalCode': self._postalCode, 'location': self._location, 'eventid': 'cowrie.session.geoip'}
 
-    def isValid(self):
+    def isValid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

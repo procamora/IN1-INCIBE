@@ -1,11 +1,13 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import Union, Dict, Any
+
 import geoip2.database
 from geoip2.errors import AddressNotFoundError
 
 
-def setIpInfo(ip):
+def setIpInfo(ip) -> Union[Dict[str, Any], None]:
     """
     Metodo que obtiene de la base de datos toda la informacion geografica de la ip
 

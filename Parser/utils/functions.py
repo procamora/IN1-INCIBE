@@ -4,7 +4,9 @@
 import logging
 import os
 import re
+from builtins import bool
 from http import HTTPStatus  # https://docs.python.org/3/library/http.html
+from typing import Union, NoReturn
 
 import colorlog  # https://medium.com/@galea/python-logging-example-with-color-formatting-file-handlers-6ee21d363184
 import requests
@@ -13,7 +15,7 @@ from filehash import FileHash
 requests.packages.urllib3.disable_warnings()
 
 
-def getLogger(verbose, name='Parser'):
+def getLogger(verbose, name='Parser') -> colorlog:
     # Desabilita log de modulos
     # for _ in ("boto", "elasticsearch", "urllib3"):
     #    logging.getLogger(_).setLevel(logging.CRITICAL)
@@ -39,7 +41,7 @@ def getLogger(verbose, name='Parser'):
     return log
 
 
-def parserDateTime(line):
+def parserDateTime(line) -> str:
     """
     Metodo para obtener la fecha y hora de cualquier linea, si hay una T como separador entre la fecha y la hora ls
     sustituyo por un espacio en blanco y retorno solo la fecha hora, quitando las fracciones de segungo y zona horaria
@@ -53,7 +55,7 @@ def parserDateTime(line):
     return datetime.replace('T', ' ').split('.')[0]
 
 
-def getSession(line):
+def getSession(line) -> str:
     """
     Metodo para obtener la sesion. Esta unicamente en la linea New connection
 
@@ -64,7 +66,7 @@ def getSession(line):
     return re.search(regex, line).group(1)
 
 
-def parserIp(line):
+def parserIp(line) -> str:
     """
     Metodo para obtener la ip. funciona unicamente en la linea New connection
 
@@ -75,7 +77,7 @@ def parserIp(line):
     return re.search(regex, line).group(1)
 
 
-def parserIpAnyLine(line):
+def parserIpAnyLine(line) -> str:
     """
     Metodo para obtener la ip de cualquier linea
 
@@ -86,7 +88,7 @@ def parserIpAnyLine(line):
     return re.search(regex, line).group(1)
 
 
-def parserIdtoSession(line):
+def parserIdtoSession(line) -> str:
     """
     Metodo para obtener el id de una conexion, este id junto a la ip identifican los log de una sesion
 
@@ -97,7 +99,7 @@ def parserIdtoSession(line):
     return re.search(regex, line).group(1)
 
 
-def parserIdIp(line):
+def parserIdIp(line) -> Union[str, None]:
     """
     Metodo para obtener el id y la ip de una conexion
 
@@ -111,7 +113,7 @@ def parserIdIp(line):
     return None
 
 
-def writeFile(text, fout, mode):
+def writeFile(text, fout, mode) -> NoReturn:
     """
     Metodo para escribir todos los INSERT INTO en un fichero
 
@@ -124,7 +126,7 @@ def writeFile(text, fout, mode):
         fp.write(text)
 
 
-def checkDir(directory):
+def checkDir(directory) -> NoReturn:
     """
     Metodo que comprueeba si existe un directorio, si no existe lo crea
     :param directory:
@@ -134,12 +136,12 @@ def checkDir(directory):
         os.mkdir(directory)
 
 
-def is_downloadable(url):
+def is_downloadable(url) -> bool:
     """
     Does the url contain a downloadable resource
     """
     try:
-        h = requests.head(url, allow_redirects=True, verify=False)
+        h = requests.head(url, allow_redirects=True, verify=False, timeout=5)
         header = h.headers
         content_type = header.get('content-type')
         # if 'text' in content_type.lower():
@@ -148,19 +150,19 @@ def is_downloadable(url):
             return False
         return True
     except Exception as e:
-        l = getLogger(False)
-        l.warning('not is_downloadable: {}'.format(url))
+        # l = getLogger(False)
+        print('not is_downloadable: {}'.format(url))
         return False
 
 
-def get_shasum(file_url) -> str:
+def get_shasum(file_url) -> Union[str, None]:
     # Si no tiene http:// requests falla al descargar
     if not re.search('http://', file_url):
         file_url = 'http://{}'.format(file_url)
 
     if is_downloadable(file_url):
-        file_name = 'kk.bin'
-        r = requests.get(file_url, verify=False)
+        file_name = file_url.split('/')[-1]
+        r = requests.get(file_url, verify=False, timeout=5)
         if r.status_code == HTTPStatus.OK:
             # Copiamos los ficheros por bloques
             with open(file_name, 'wb') as pdf:
@@ -170,7 +172,7 @@ def get_shasum(file_url) -> str:
 
             md5hasher = FileHash('sha256')
             newHash = md5hasher.hash_file("./{}".format(file_name))
-            os.remove(file_name)  # FIXME DESCOMENTAR
+            # os.remove(file_name)  # FIXME DESCOMENTAR
             return newHash
         return None
     return None

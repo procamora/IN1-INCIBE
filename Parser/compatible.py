@@ -4,13 +4,14 @@
 import configparser
 import json
 from timeit import default_timer as timer
+from typing import NoReturn
 
 from newConnection import NewConnection
 from utils.functions import checkDir, writeFile
 
 
 class Compatible(object):
-    def __init__(self, logger, directory, myConfig):
+    def __init__(self, logger, directory, myConfig) -> NoReturn:
         """
         Constructor de clase
 
@@ -28,7 +29,7 @@ class Compatible(object):
         self._fileCompleted = '{}/{}'.format(directory, config[myConfig]['FILE_LOG_COMPLETED'])
         self._outputJson = '{}/{}'.format(directory, config[myConfig]['FILE_LOG_COWRIE'])
 
-    def run(self):
+    def run(self) -> NoReturn:
         """
         Metodo para analizar todas las lineas del fichero de sesiones iniciadas pero no cerradas y guardar los
         resultados

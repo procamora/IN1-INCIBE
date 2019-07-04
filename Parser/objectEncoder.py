@@ -4,6 +4,7 @@
 
 import inspect
 import json
+from typing import Dict, Any
 
 
 class ObjectEncoder(json.JSONEncoder):
@@ -11,7 +12,7 @@ class ObjectEncoder(json.JSONEncoder):
     Clase para codificar una clase en un objeto JSON
     """
 
-    def default(self, obj):
+    def default(self, obj) -> Dict[str, Any]:
         """
         Metodo que se llama implicitamente cuando hacemos un dumps de una instancia de la clase, crea un diccionario
         de los atributos de la clase eliminando aquellos que no deben exportarse al json

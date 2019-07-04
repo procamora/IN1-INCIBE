@@ -1,5 +1,6 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
+from typing import NoReturn, Dict, Any
 
 from .table import Table
 
@@ -9,7 +10,7 @@ class TableClients(Table):
     Clase que contiene los campos de la tabla clients
     """
 
-    def __init__(self):
+    def __init__(self) -> NoReturn:
         """
         Constructor de clase
         """
@@ -21,7 +22,7 @@ class TableClients(Table):
         self._encryption = self._DEFAULT_VALUE
         self._authentication = self._DEFAULT_VALUE
 
-    def load(self, version, shortName):
+    def load(self, version, shortName) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla
 
@@ -34,23 +35,23 @@ class TableClients(Table):
         if len(shortName) > 0 and shortName != self._DEFAULT_VALUE:
             self._shortName = shortName
 
-    def setKexAlg(self, kexAlg):
+    def setKexAlg(self, kexAlg) -> NoReturn:
         if len(kexAlg) > 0 and kexAlg != self._DEFAULT_VALUE:
             self._kexAlg = kexAlg
 
-    def setKeyAlg(self, keyAlg):
+    def setKeyAlg(self, keyAlg) -> NoReturn:
         if len(keyAlg) > 0 and keyAlg != self._DEFAULT_VALUE:
             self._keyAlg = keyAlg
 
-    def setEncryption(self, encryption):
+    def setEncryption(self, encryption) -> NoReturn:
         if len(encryption) > 0 and encryption != self._DEFAULT_VALUE:
             self._encryption = encryption
 
-    def setAuthentication(self, authentication):
+    def setAuthentication(self, authentication) -> NoReturn:
         if len(authentication) > 0:
             self._authentication = authentication
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Redefino este metodo para generar los atributos que quiero serializar
 
@@ -60,7 +61,7 @@ class TableClients(Table):
                 'encryption': self._encryption, 'authentication': self._authentication,
                 'eventid': 'cowrie.client.version'}
 
-    def isValid(self):
+    def isValid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

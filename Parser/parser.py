@@ -6,6 +6,7 @@ import glob
 import re
 import traceback
 from timeit import default_timer as timer
+from typing import NoReturn, Dict
 
 import geoip2.database
 
@@ -21,7 +22,7 @@ class Parser(object):
     Clase Parser encargada de parsear los ficheros de log
     """
 
-    def __init__(self, logger, output, workingDir, myConfig):
+    def __init__(self, logger, output, workingDir, myConfig) -> NoReturn:
         """
         Constructor de clase
 
@@ -55,7 +56,7 @@ class Parser(object):
         with open(self._logAuxNoSession, 'w'):
             pass
 
-    def parse(self, db):
+    def parse(self, db) -> NoReturn:
         """
         Metodo para arancar el proceso de parsear ficheros
 
@@ -80,14 +81,14 @@ class Parser(object):
                 self._logger.error('Unicode decode error in file: {}'.format(fname))
                 self._logger.debug(traceback.print_tb(error.__traceback__))
             end = timer()
-            #self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
+            # self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
 
         endTotal = timer()
         self._logger.info('Time total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
         self._geoip2DB.close()
 
     @staticmethod
-    def getConnections(fname):
+    def getConnections(fname) -> Dict[int, ConnectionAux]:
         """
         Metodo inicial que busca todas las New Connection que hay en el fichero y las asocia a la linea en la que estan
 
@@ -105,7 +106,7 @@ class Parser(object):
 
         return connectionAuxDict
 
-    def setIPtoID(self, connectionAuxDict, fname):
+    def setIPtoID(self, connectionAuxDict, fname) -> Dict[str, NewConnection]:
         """
         Asociamos una IP a su ID que lo identificara en cada una de las lineas del log [HoneyPotSSHTransport,id,ip]
         Devolvemos una lista de conexiones con la informacion que necesitamos para obtener el resto de datos
@@ -153,7 +154,7 @@ class Parser(object):
 
         return newConnectionDict
 
-    def getInfoLog(self, newConnectionDict, fname):
+    def getInfoLog(self, newConnectionDict, fname) -> NoReturn:
         """
         Metodo que recorre el fichero linea a linea y si existe el indice id,ip en el diccionario obtiene ek objeto
         asociado a ese indice y le añade esa linea, que solo guardara si tiene informacion util
@@ -196,7 +197,7 @@ class Parser(object):
             else:
                 writeFile(conect.getJSON(), self._logAuxNoSession, 'a')
 
-    def searchWget(self, newConnectionDict, command):
+    def searchWget(self, newConnectionDict, command) -> NoReturn:
         """
         Metodo que recorre la lista de conexiones que han ejecutado un comand wget, si el comando corresponde con
         el que estamos tratando le actualiza los valores y lo borra de la lista
@@ -210,7 +211,7 @@ class Parser(object):
                 self._connectionWget.remove(connection)
                 return
 
-    def updateCommandConnection(self, newConnectionDict):
+    def updateCommandConnection(self, newConnectionDict) -> NoReturn:
         """
         Metodo que recorre todos los comandos  wget ejecutados para comprobar si en el diccionario de conexiones se ha
         ejecutado

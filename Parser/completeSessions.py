@@ -4,13 +4,14 @@
 import configparser
 import json
 from timeit import default_timer as timer
+from typing import NoReturn
 
 from newConnection import NewConnection
 from utils.functions import checkDir, writeFile
 
 
 class CompleteSession(object):
-    def __init__(self, logger, output, myConfig):
+    def __init__(self, logger, output, myConfig) -> NoReturn:
         """
         Constructor de clase
 
@@ -35,7 +36,7 @@ class CompleteSession(object):
         with open(self._fileNoSession, 'r') as f:
             self._linesNoSession = f.readlines()
 
-    def search(self, lineSessionJson):
+    def search(self, lineSessionJson) -> bool:
         """
         Metodo para comprobar si hay alguna linea de sesion no iniciada que coincide con una sesion iniciada dada
 
@@ -51,7 +52,7 @@ class CompleteSession(object):
                 return True
         return False
 
-    def writeLogSession(self):
+    def writeLogSession(self) -> NoReturn:
         """
         Metodo que añade al fichero principal las sesiones que han sido recuperadas
 
@@ -59,7 +60,7 @@ class CompleteSession(object):
         """
         writeFile(self._outputJson, self._fileSessionOutput, 'a')
 
-    def writeLogNoSession(self):
+    def writeLogNoSession(self) -> NoReturn:
         """
         Metodo que crea un fichero auxiliar con la informacion geografica de las ip's de las sesiones que no han
         sido capaz de recuperarse
@@ -77,7 +78,7 @@ class CompleteSession(object):
 
         writeFile(log, self._fileNoSessionOutput, 'w')
 
-    def run(self):
+    def run(self) -> NoReturn:
         """
         Metodo para analizar todas las lineas del fichero de sesiones iniciadas pero no cerradas y guardar los
         resultados

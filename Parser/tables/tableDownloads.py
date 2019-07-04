@@ -1,6 +1,8 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import NoReturn, Dict, Any
+
 from .table import Table
 
 
@@ -9,7 +11,7 @@ class TableDownloads(Table):
     Clase que contiene los campos de la tabla downloads
     """
 
-    def __init__(self, timestamp, url, outfile, shasum):
+    def __init__(self, timestamp, url, outfile, shasum) -> NoReturn:
         """
         Constructor de clase
 
@@ -26,7 +28,7 @@ class TableDownloads(Table):
         self._shasum = shasum
         self._dangerous = -1  # no analizado
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Redefino este metodo para generar los atributos que quiero serializar
 
@@ -35,7 +37,7 @@ class TableDownloads(Table):
         return {'timestamp': self._timestamp, 'url': self._url, 'outfile': self._outfile,
                 'shasum': self._shasum, 'dangerous': self._dangerous, 'eventid': 'cowrie.session.file_download'}
 
-    def isValid(self):
+    def isValid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

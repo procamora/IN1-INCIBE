@@ -13,6 +13,8 @@ function parser() {
 
 function elk() {
 	cd utils
+	python3 elasticsearchLib.py -f inicial.json -i cowrie-test -m mapping_compatible.json -v
+
 	
 	python3 elasticsearchLib.py -f /home/procamora/Documents/LogsCowrie/output_scriptzteam/cowrie.compatible.json -i cowrie-scriptzteam -m mapping_compatible.json -v
 	python3 elasticsearchLib.py -f /home/procamora/Documents/LogsCowrie/output_scriptzteam/cowrie.nosession.json.2.json -i cowrie-scriptzteam-ip -m mapping_compatible.json -v

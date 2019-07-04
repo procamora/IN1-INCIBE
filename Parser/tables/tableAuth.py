@@ -1,6 +1,8 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import NoReturn, Dict, Any
+
 from .table import Table
 
 
@@ -9,7 +11,7 @@ class TableAuth(Table):
     Clase que contiene los campos de la tabla auth
     """
 
-    def __init__(self):
+    def __init__(self) -> NoReturn:
         """
         Constructor de clase
         """
@@ -19,7 +21,7 @@ class TableAuth(Table):
         self._password = str()
         self._timestamp = str()
 
-    def load(self, success, username, password, timestamp):
+    def load(self, success, username, password, timestamp) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla
 
@@ -34,7 +36,7 @@ class TableAuth(Table):
         self._password = password
         self._timestamp = timestamp
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Redefino este metodo para generar los atributos que quiero serializar
 
@@ -44,7 +46,7 @@ class TableAuth(Table):
                 'timestamp': self._timestamp, 'credentials': '{}/{}'.format(self._username, self._password),
                 'eventid': 'cowrie.login'}
 
-    def isValid(self):
+    def isValid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

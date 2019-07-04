@@ -1,10 +1,12 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import NoReturn
+
 
 class ThreatLevel(object):
 
-    def __init__(self) -> None:
+    def __init__(self) -> NoReturn:
         super().__init__()
 
         self._LEVEL_3 = ['cd', 'cat', 'chkconfig', 'echo', 'du', 'df', 'uptime', 'w', 'whoami', 'ifconfig',
@@ -17,13 +19,13 @@ class ThreatLevel(object):
                          'rm', 'sh', 'bash', 'busybox', 'reSuSEfirewall', 'SuSEfirewall', 'killall',
                          'kill', 'pkill', 'sleep', 'sudo', 'nohup', 'poweroff', 'reboot', 'halt', 'exec']
 
-    def checkArgument(self):
+    def checkArgument(self) -> int:
         # echo -ne
         # history -c
         #
         return 1
 
-    def getThreatLevel(self, listInputs):
+    def getThreatLevel(self, listInputs) -> int:
         if len(listInputs) == 0:
             return 4
 

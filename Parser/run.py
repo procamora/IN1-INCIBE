@@ -6,7 +6,6 @@ import configparser
 import os
 from timeit import default_timer as timer
 
-
 from compatible import Compatible
 from completeSessions import CompleteSession
 from parser import Parser
@@ -17,7 +16,7 @@ config.sections()
 config.read('settings.conf')
 
 
-def CreateArgParser():
+def CreateArgParser() -> argparse:
     """
     Metodo para establecer los argumentos que necesita la clasek
 

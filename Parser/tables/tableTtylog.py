@@ -1,6 +1,7 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import NoReturn, Dict, Any
 
 from .table import Table
 
@@ -10,7 +11,7 @@ class TableTtylog(Table):
     Clase que contiene los campos de la tabla ttylog
     """
 
-    def __init__(self):
+    def __init__(self) -> NoReturn:
         """
         Constructor de clase
         """
@@ -18,7 +19,7 @@ class TableTtylog(Table):
         self._ttylog = self._DEFAULT_VALUE
         self._size = -1
 
-    def setSize(self, size):
+    def setSize(self, size) -> NoReturn:
         """
         Metodo para establecer el tamaño de la ttylog
 
@@ -28,7 +29,7 @@ class TableTtylog(Table):
         if size != -1:
             self._size = int(size)
 
-    def setTtylog(self, ttylog):
+    def setTtylog(self, ttylog) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla
 
@@ -38,7 +39,7 @@ class TableTtylog(Table):
         if len(ttylog) > 0 and ttylog != self._DEFAULT_VALUE:
             self._ttylog = ttylog
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Redefino este metodo para generar los atributos que quiero serializar
 
@@ -46,7 +47,7 @@ class TableTtylog(Table):
         """
         return {'ttylog': self._ttylog, 'size': self._size, 'eventid': 'cowrie.log.closed'}
 
-    def isValid(self):
+    def isValid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

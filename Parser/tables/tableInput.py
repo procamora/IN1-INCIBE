@@ -1,6 +1,8 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import NoReturn, Dict, Any
+
 from .table import Table
 
 
@@ -9,7 +11,7 @@ class TableInput(Table):
     Clase que contiene los campos de la tabla input
     """
 
-    def __init__(self):
+    def __init__(self) -> NoReturn:
         """
         Constructor de clase
         """
@@ -18,7 +20,7 @@ class TableInput(Table):
         self._success = -1
         self._input = str()
 
-    def setSuccess(self, success):
+    def setSuccess(self, success) -> NoReturn:
         """
         Metodo para establecer el valor de la ejecucion de un comando (valido/invalido)
 
@@ -27,7 +29,7 @@ class TableInput(Table):
         """
         self._success = int(success)
 
-    def getInput(self):
+    def getInput(self) -> NoReturn:
         """
         Metodo para obtener el valor de _input, corresponde con el comando ejecutado
 
@@ -35,7 +37,7 @@ class TableInput(Table):
         """
         return self._input
 
-    def load(self, timestamp, myInput):
+    def load(self, timestamp, myInput) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla
 
@@ -46,7 +48,7 @@ class TableInput(Table):
         self._timestamp = timestamp
         self._input = myInput
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         """
         Redefino este metodo para generar los atributos que quiero serializar
 
@@ -55,7 +57,7 @@ class TableInput(Table):
         return {'timestamp': self._timestamp, 'success': self._success, 'input': self._input,
                 'eventid': 'cowrie.command.input'}
 
-    def isValid(self):
+    def isValid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios
@@ -66,7 +68,7 @@ class TableInput(Table):
             return True
         return False
 
-    def isUpdateSuccess(self):
+    def isUpdateSuccess(self) -> bool:
         """
         Metodo que retorna True si no se ha actualizado el valor por defecto de success
 

@@ -4,6 +4,7 @@
 
 import json
 import re
+from typing import NoReturn, List, Dict, Any
 
 from connectionAux import ConnectionAux
 from objectEncoder import ObjectEncoder
@@ -17,7 +18,7 @@ class NewConnection(json.JSONEncoder):
     Clase que contiene toda la informacion almacenada en el log de una NewConection
     """
 
-    def __init__(self, connectionAux, logger, geoip2DB):
+    def __init__(self, connectionAux, logger, geoip2DB) -> NoReturn:
         """
         Constructor de clase
 
@@ -50,7 +51,7 @@ class NewConnection(json.JSONEncoder):
         self._session.load(self._connectionAux.getStarttime(), self._connectionAux.getIp())
         self._geoip.setIp(self._connectionAux.getIp())
 
-    def getId(self):
+    def getId(self) -> str:
         """
         Metodo para obtener la id.ip de la conexion
 
@@ -58,7 +59,7 @@ class NewConnection(json.JSONEncoder):
         """
         return self._connectionAux.getId()
 
-    def checkCommandPending(self, command):
+    def checkCommandPending(self, command) -> bool:
         """
         Metodo que retorna True si el comando wget que recibe esta pendiente de comprobar, si esta pendiente lo borra
         de la lista de comandos pendientes y lo añade a la lista de descargas
@@ -79,7 +80,7 @@ class NewConnection(json.JSONEncoder):
 
         return False
 
-    def addLine(self, line):
+    def addLine(self, line) -> bool:
         """
         Metodo para analizar una linea, comprueba si la linea coincide con alguna de las regex, si coincide guardara esa
         informacion en la tabla asociada a esa informacion
@@ -222,7 +223,7 @@ class NewConnection(json.JSONEncoder):
 
         return False
 
-    def updateAtributes(self):
+    def updateAtributes(self) -> bool:
         """
         Metodo para actualizar los atributos de clasificacion de la sesion
         Comprobamos si la sesion es un scaneo o un ataque de fuerza bruta
@@ -239,7 +240,7 @@ class NewConnection(json.JSONEncoder):
         else:
             self._isBruteForceAttack = False
 
-    def getJSON(self):
+    def getJSON(self) -> Dict[str, Any]:
         """
         Metodo para obtener un string con toda la informacion de la conexion en formato JSON
 
@@ -261,7 +262,7 @@ class NewConnection(json.JSONEncoder):
 
         return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
 
-    def getJSONCowrie(self):
+    def getJSONCowrie(self) -> Dict[str, Any]:
         """
         Metodo para obtener un string con toda la informacion de la conexion en formato JSON
 
@@ -320,46 +321,46 @@ class NewConnection(json.JSONEncoder):
         # return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
         return myJson
 
-    def loadClient(self, stringJson):
+    def loadClient(self, stringJson) -> NoReturn:
         self._client.load(stringJson['version'], stringJson['shortName'])
         self._client.setKeyAlg(stringJson['keyAlg'])
         self._client.setKexAlg(stringJson['kexAlg'])
         self._client.setEncryption(stringJson['encryption'])
         self._client.setAuthentication(stringJson['authentication'])
 
-    def loadTtylog(self, stringJson):
+    def loadTtylog(self, stringJson) -> NoReturn:
         self._ttylog.setTtylog(stringJson['ttylog'])
         self._ttylog.setSize(stringJson['size'])
 
-    def loadSession(self, stringJson):
+    def loadSession(self, stringJson) -> NoReturn:
         self._session.load(stringJson['starttime'], stringJson['ip'])
         self._session.setEndtime(stringJson['endtime'])
         self._session.setTermsize(stringJson['termsize'])
 
-    def loadGeoIp(self, stringJson):
+    def loadGeoIp(self, stringJson) -> NoReturn:
         self._geoip.loadGeoIpExtended(stringJson['continentName'], stringJson['continentCode'],
                                       stringJson['countryName'], stringJson['countryCode'], stringJson['cityName'],
                                       stringJson['postalCode'], stringJson['location'])
 
-    def loadFingerprint(self, stringJson):
+    def loadFingerprint(self, stringJson) -> NoReturn:
         self._fingerprint.setFingerprint(stringJson['fingerprint'])
 
-    def loadInput(self, stringJson):
+    def loadInput(self, stringJson) -> NoReturn:
         t = TableInput()
         t.load(stringJson['timestamp'], stringJson['input'])
         t.setSuccess(stringJson['success'])
         self._listInputs.append(t)
 
-    def loadAuth(self, stringJson):
+    def loadAuth(self, stringJson) -> NoReturn:
         a = TableAuth()
         a.load(stringJson['success'], stringJson['username'], stringJson['password'], stringJson['timestamp'])
         self._listAuths.append(a)
 
-    def loadDownload(self, stringJson):
+    def loadDownload(self, stringJson) -> NoReturn:
         d = TableDownloads(stringJson['timestamp'], stringJson['url'], stringJson['outfile'], stringJson['shasum'])
         self._listDownloads.append(d)
 
-    def isCompleted(self):
+    def isCompleted(self) -> bool:
         """
         Metodo que indica si esta session esta completa
 
@@ -369,7 +370,7 @@ class NewConnection(json.JSONEncoder):
             return True
         return False
 
-    def isSession(self):
+    def isSession(self) -> bool:
         """
         Metodo que indica si esta session tiene establecida una session o solo se puede identificar por id,ip
 
@@ -380,7 +381,7 @@ class NewConnection(json.JSONEncoder):
         return False
 
     @staticmethod
-    def getListCommands(commands):
+    def getListCommands(commands) -> List[str]:
         listCommands = list()
         # Casos especificos donde el comando lleva una regex
         if re.search(r'(grep -E)', commands):
@@ -426,7 +427,7 @@ class NewConnection(json.JSONEncoder):
             return False
 
     @staticmethod
-    def fromJson(jsonSession, jsonNoSession, simple=True):
+    def fromJson(jsonSession, jsonNoSession, simple=True) -> object:
         aux = ConnectionAux(jsonSession['session']['ip'], jsonSession['IdSession'], jsonSession['session']['starttime'])
         aux.setId(jsonSession['idip'].split(',')[0])
         nCon = NewConnection(aux, False, None)
@@ -473,5 +474,4 @@ class NewConnection(json.JSONEncoder):
         if simple:
             return nCon
         else:
-
             return nCon

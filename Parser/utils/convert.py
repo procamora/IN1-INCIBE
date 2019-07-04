@@ -7,9 +7,10 @@ import glob
 import os
 import platform
 import re
+from typing import NoReturn
 
 
-def CreateArgParser():
+def CreateArgParser() -> argparse:
     """
     Metodo para establecer los argumentos que necesita la clase
 
@@ -26,7 +27,7 @@ def CreateArgParser():
     return myParser.parse_args()
 
 
-def convert(directory):
+def convert(directory) -> NoReturn:
     files = '{}/cowrie.log.*'.format(directory)
     date = datetime.datetime(2009, 11, 7)
 
