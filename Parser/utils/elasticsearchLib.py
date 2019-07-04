@@ -7,15 +7,16 @@ import json
 import re
 import sys
 from timeit import default_timer as timer
+from typing import NoReturn, Dict, Any, Union
 
 import requests
 from elasticsearch import Elasticsearch
 
-from functions import getLogger, get_shasum
+from functions import getLogger, get_shasum, writeFile
 
 
 class Elastic(object):
-    def __init__(self, ip, logger):
+    def __init__(self, ip, logger) -> NoReturn:
         self._es = Elasticsearch(
             [ip],
             # http_auth=('user', 'secret'),
@@ -30,7 +31,7 @@ class Elastic(object):
         self._doc_type = 'object'  # object y nested
         self._URL = "http://127.0.0.1:8080"
 
-    def addMapping(self, myIndex, fileMapping):
+    def addMapping(self, myIndex, fileMapping) -> NoReturn:
         with open(fileMapping, 'r') as fp:
             mapping = fp.read()
 
@@ -39,9 +40,9 @@ class Elastic(object):
             self._es.indices.create(index=myIndex, body=mapping)  # , ignore=400)
         except:
             self._logger.error("Index: {} already exists".format(myIndex))
-        self._logger.info('Create index')
+        self._logger.info('Create index {}'.format(myIndex))
 
-    def insert(self, myIndex, file):
+    def insert(self, myIndex, file) -> NoReturn:
         with open(file, 'r') as open_file:
             for entry in open_file:
                 if len(entry) > 2:  # evitar lineas en blanco "\n"
@@ -52,7 +53,7 @@ class Elastic(object):
         # print('get: ' + str(res['_source']))
         # self._es.indices.refresh(index=myIndex)
 
-    def bulk(self, myIndex, file):
+    def bulk(self, myIndex, file) -> NoReturn:
         contProgress = 0
         incremet = 10000
         with open(file, 'r') as fp:
@@ -84,7 +85,24 @@ class Elastic(object):
                     self._logger.critical('Exiting...')
                     sys.exit(1)
 
-    def isError(self, response):
+    def updateDownload(self, entry) -> Dict[str, Any]:
+        """
+        Metodo para actualizar el valor dangerous preguntando por el hash del fichero
+
+        :param entry:
+        :return:
+        """
+        t = json.loads(entry)
+        if 'dangerous' in t:
+            self._logger.info(t)
+            positives = self.malware_analize_shasum(t['shasum'])
+            if positives is not None:
+                self._logger.info('Dangarous: {}'.format(positives))
+                t['dangerous'] = positives
+                self._logger.debug(entry)
+        return json.dumps(t)
+
+    def isError(self, response) -> bool:
         """
         Metodo que comrpueba si la respuesta de bulk o insert es correcta, en caso de que no sea correcta muestra
         algunos de los errores y despues informa para finalizar la ejecucion del programa
@@ -110,7 +128,7 @@ class Elastic(object):
             return True
         return False
 
-    def updateDangerousFiles(self):
+    def update_dangerous_files(self) -> NoReturn:
         self._logger.info('Update downloaded files')
         jsonSearch = \
             {
@@ -133,14 +151,37 @@ class Elastic(object):
                     }
                 self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
 
-    def createJsonDownloads(self):
+    def malware_analize_url(self, url_analize) -> Union[Dict[str, str], None]:
+        data = '{"url": "%s"}' % url_analize
+        myjson = json.dumps(json.loads(data))
+        url = '{}/analize'.format(self._URL)
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+
+        try:
+            r = requests.post(url, data=myjson, headers=headers, timeout=5)
+            if r.status_code == 200:
+                return json.loads(r.text)['results']['positives']
+            return None
+        except requests.exceptions.ConnectionError:
+            self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
+            return None
+
+    def update_json_downloads(self) -> NoReturn:
+        """
+        Metodo que se llama con el metodo update, busca todos los comandos wget y curl que no tienen asociada una
+        descarga y descargan ese fichero, calcula el hash e inserta ese dato en elasticsearch
+        :return:
+        """
         self._logger.info('search wget/curl files')
         jsonSearchWgets = \
             {
                 "size": 10000,
                 "query": {
-                    "term": {
-                        "binary": "wget"
+                    "bool": {
+                        "should": [
+                            {"term": {"binary": "wget"}},
+                            {"term": {"binary": "curl"}}
+                        ]
                     }
                 }
             }
@@ -152,7 +193,7 @@ class Elastic(object):
         json_insert = list()
         for hit in response['hits']['hits']:
             self._logger.debug(hit['_source'])
-            print(hit['_source']['input'])
+            # print(hit['_source']['input']) # imprime el comando wget
             jsonSearchDownloads = \
                 {
                     "query": {
@@ -167,34 +208,23 @@ class Elastic(object):
                 }
             responseDownloads = self._es.search(body=jsonSearchDownloads)
             if responseDownloads['hits']['total'] == 0:
-                pass
-                # FIXME PONER LA HORA CORRECTAMENTE
                 regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
                 search_url = re.search(regex, hit['_source']['input'])
                 if search_url:
                     url = search_url.group(1)
                     entry = self.create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url)
                     if entry is not None:
+                        writeFile('{}\n'.format(entry), 'downloads.json', 'a')
                         print(entry)
                         self._es.index(index=hit['_index'], doc_type=self._doc_type, body=entry)
 
-
-    def updateDownload(self, entry) -> dict:
-        t = json.loads(entry)
-        if 'dangerous' in t:
-            self._logger.info(t)
-            positives = self.malware_analize_shasum(t['shasum'])
-            if positives is not None:
-                self._logger.info('ACTUALIZAMOS CON {}'.format(positives))
-                t['dangerous'] = positives
-                self._logger.debug(entry)
-        return json.dumps(t)
-
-    def create_json_donwload(self, session: str, timestamp: str, url: str) -> str:
+    def create_json_donwload(self, session: str, timestamp: str, url: str) -> Dict[str, str]:
         shasum = get_shasum(url)
         if shasum is None:
             self._logger.warning('Can not be downloaded {}'.format(url))
-            return None
+            json_table = {'session': session, 'timestamp': timestamp, 'url': url, 'outfile': "-1", 'shasum': "-1",
+                          'dangerous': -1, 'eventid': 'cowrie.session.file_download'}
+            return json.dumps(json_table)
         outfile = 'var/lib/cowrie/downloads/{}'.format(shasum)
 
         positives = self.malware_analize_shasum(shasum)
@@ -204,13 +234,13 @@ class Elastic(object):
             dangerous = -1
         json_table = {'session': session, 'timestamp': timestamp, 'url': url, 'outfile': outfile, 'shasum': shasum,
                       'dangerous': dangerous, 'eventid': 'cowrie.session.file_download'}
-        return json_table  # fixme conformar que esta en string con las comillas correctas
+        return json.dumps(json_table)
 
-    def malware_analize_shasum(self, shasum) -> dict:
+    def malware_analize_shasum(self, shasum) -> Dict[str, str]:
         url = '{}/analize?md5={}'.format(self._URL, shasum)
         headers = {'Accept': 'application/json'}
         try:
-            r = requests.get(url, headers=headers)
+            r = requests.get(url, headers=headers, timeout=5)
             if r.status_code == 200:
                 return json.loads(r.text)['results']['positives']
             return None
@@ -218,23 +248,8 @@ class Elastic(object):
             self._logger.warning("No se ha podido comprobar el hash")  # fixme traducir
             return None
 
-    def malware_analize_url(self, url_analize) -> dict:
-        data = '{"url": "%s"}' % url_analize
-        myjson = json.dumps(json.loads(data))
-        url = '{}/analize'.format(self._URL)
-        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
-        try:
-            r = requests.post(url, data=myjson, headers=headers)
-            if r.status_code == 200:
-                return json.loads(r.text)['results']['positives']
-            return None
-        except requests.exceptions.ConnectionError:
-            self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
-            return None
-
-
-def CreateArgParser():
+def CreateArgParser() -> argparse:
     """
     Metodo para establecer los argumentos que necesita la clase
 
@@ -278,7 +293,7 @@ if __name__ == '__main__':
 
     if arg.update:
         # e.updateDangerousFiles()
-        e.createJsonDownloads()
+        e.update_json_downloads()
     else:
         if arg.file is None:
             logger.critical("The following arguments are required: -f/--file")
