@@ -4,7 +4,6 @@
 import logging
 import os
 import re
-from builtins import bool
 from http import HTTPStatus  # https://docs.python.org/3/library/http.html
 from typing import Union, NoReturn
 
@@ -135,44 +134,3 @@ def checkDir(directory) -> NoReturn:
     if not os.path.isdir(directory):
         os.mkdir(directory)
 
-
-def is_downloadable(url) -> bool:
-    """
-    Does the url contain a downloadable resource
-    """
-    try:
-        h = requests.head(url, allow_redirects=True, verify=False, timeout=5)
-        header = h.headers
-        content_type = header.get('content-type')
-        # if 'text' in content_type.lower():
-        #    return False
-        if content_type is not None and 'html' in content_type.lower():
-            return False
-        return True
-    except Exception as e:
-        # l = getLogger(False)
-        print('not is_downloadable: {}'.format(url))
-        return False
-
-
-def get_shasum(file_url) -> Union[str, None]:
-    # Si no tiene http:// requests falla al descargar
-    if not re.search('http://', file_url):
-        file_url = 'http://{}'.format(file_url)
-
-    if is_downloadable(file_url):
-        file_name = file_url.split('/')[-1]
-        r = requests.get(file_url, verify=False, timeout=5)
-        if r.status_code == HTTPStatus.OK:
-            # Copiamos los ficheros por bloques
-            with open(file_name, 'wb') as pdf:
-                for chunk in r.iter_content(chunk_size=1024):
-                    if chunk:
-                        pdf.write(chunk)
-
-            md5hasher = FileHash('sha256')
-            newHash = md5hasher.hash_file("./{}".format(file_name))
-            # os.remove(file_name)  # FIXME DESCOMENTAR
-            return newHash
-        return None
-    return None
