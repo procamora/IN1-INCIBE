@@ -31,6 +31,7 @@ class NewConnection(json.JSONEncoder):
         self._threatLevel = int()  # Leve 1 Media 2 Alta 3
         self._isScanPort = bool()
         self._isBruteForceAttack = bool()
+        self._reputation = -1
         self._connectionAux = connectionAux
         self._logger = logger
         self._listCommandPending = list()
@@ -280,6 +281,7 @@ class NewConnection(json.JSONEncoder):
         jsonUpdate = json.loads(extendJson)
         jsonUpdate['session'] = self._IdSession
         # elasticsearch usa booleanos en minusculas
+        jsonUpdate['reputation'] = int(jsonUpdate['reputation'])
         jsonUpdate['isScanPort'] = jsonUpdate['isScanPort'].lower()
         jsonUpdate['isBruteForceAttack'] = jsonUpdate['isBruteForceAttack'].lower()
         jsonUpdate.pop('IdSession', None)

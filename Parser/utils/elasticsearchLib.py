@@ -12,11 +12,13 @@ from typing import NoReturn, Dict, Any, Union
 import requests
 from elasticsearch import Elasticsearch
 
+requests.packages.urllib3.disable_warnings()
+
 from functions import getLogger, get_shasum, writeFile
 
 
 class Elastic(object):
-    def __init__(self, ip, logger) -> NoReturn:
+    def __init__(self, ip, logger) -> None:
         self._es = Elasticsearch(
             [ip],
             # http_auth=('user', 'secret'),
@@ -67,7 +69,7 @@ class Elastic(object):
                     body.append({'index': {'_id': idElk}})
                     idElk += 1
                     # Intentamos actualizar el campo dangerous de las descargas si existe en vt
-                    entry = self.updateDownload(entry)
+                    entry = self.get_values_pending(entry)
                     body.append(entry)
                     if len(body) > incremet:
                         contProgress += (incremet // 2)
@@ -85,9 +87,9 @@ class Elastic(object):
                     self._logger.critical('Exiting...')
                     sys.exit(1)
 
-    def updateDownload(self, entry) -> Dict[str, Any]:
+    def get_values_pending(self, entry) -> Dict[str, Any]:
         """
-        Metodo para actualizar el valor dangerous preguntando por el hash del fichero
+        Metodo para actualizar el valor dangerous preguntando por el hash del fichero y la reputacion de la ip
 
         :param entry:
         :return:
@@ -100,6 +102,9 @@ class Elastic(object):
                 self._logger.info('Dangarous: {}'.format(positives))
                 t['dangerous'] = positives
                 self._logger.debug(entry)
+        if 'reputation' in t:
+            ip = t['idip'].split(',')[-1]
+            t['reputation'] = self.get_reputation_ip(ip)
         return json.dumps(t)
 
     def isError(self, response) -> bool:
@@ -132,6 +137,7 @@ class Elastic(object):
         self._logger.info('Update downloaded files')
         jsonSearch = \
             {
+                "size": 10000,
                 "query": {
                     "term": {"dangerous": -1}
                 }
@@ -191,6 +197,8 @@ class Elastic(object):
 
         # print(json.dumps(response))
         json_insert = list()
+        count_lines = len(response['hits']['hits'])
+        contProgress = 0
         for hit in response['hits']['hits']:
             self._logger.debug(hit['_source'])
             # print(hit['_source']['input']) # imprime el comando wget
@@ -217,13 +225,15 @@ class Elastic(object):
                         writeFile('{}\n'.format(entry), 'downloads.json', 'a')
                         print(entry)
                         self._es.index(index=hit['_index'], doc_type=self._doc_type, body=entry)
+                        self._logger.debug('{}/{}'.format(contProgress, count_lines))
+                        contProgress += 1
 
     def create_json_donwload(self, session: str, timestamp: str, url: str) -> Dict[str, str]:
         shasum = get_shasum(url)
         if shasum is None:
             self._logger.warning('Can not be downloaded {}'.format(url))
             json_table = {'session': session, 'timestamp': timestamp, 'url': url, 'outfile': "-1", 'shasum': "-1",
-                          'dangerous': -1, 'eventid': 'cowrie.session.file_download'}
+                          'dangerous': -2, 'eventid': 'cowrie.session.file_download'}
             return json.dumps(json_table)
         outfile = 'var/lib/cowrie/downloads/{}'.format(shasum)
 
@@ -236,7 +246,7 @@ class Elastic(object):
                       'dangerous': dangerous, 'eventid': 'cowrie.session.file_download'}
         return json.dumps(json_table)
 
-    def malware_analize_shasum(self, shasum) -> Dict[str, str]:
+    def malware_analize_shasum(self, shasum) -> Union[Dict[str, str], None]:
         url = '{}/analize?md5={}'.format(self._URL, shasum)
         headers = {'Accept': 'application/json'}
         try:
@@ -247,6 +257,45 @@ class Elastic(object):
         except requests.exceptions.ConnectionError:
             self._logger.warning("No se ha podido comprobar el hash")  # fixme traducir
             return None
+
+    def update_dangerous_downloads_novalid(self):
+        query_selecct = \
+            {
+                "size": 10000,
+                "query": {
+                    "bool": {
+                        "must": [
+                            {"match": {"eventid": "cowrie.session.file_download"}},
+                            {"match": {"shasum.keyword": "-1"}},
+                            {"match": {"outfile.keyword": "-1"}}
+                        ]
+                    }
+                }
+            }
+        res = self._es.search(body=query_selecct)
+        self._logger.info("Gots {} files".format(res['hits']['total']))
+        for hit in res['hits']['hits']:
+            self._logger.debug(hit['_source'])
+            jsonUpdate = \
+                {
+                    "doc": {
+                        "dangerous": -2
+                    }
+                }
+            self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
+
+    def get_reputation_ip(self, ip) -> int:
+        req_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:35.0) Gecko/20100101 Firefox/35.0'}
+        response = requests.get('https://threatwar.com/ip/{}'.format(ip), headers=req_headers, verify=False)
+
+        if response.status_code == 200:
+            regex = r'<td>Total Attacks<\/td>( )*(\n)?( )*<td>(\d+)<\/td>'
+            if re.search(regex, response.text):
+                reputation = int(re.search(regex, response.text).group(4))
+                self._logger.debug('reputation ip {}: {}'.format(ip, reputation))
+                return reputation  # reputacion de la ip
+            return -1  # ip no se ha podido analizar
+        return -2  # ip no se encuentra
 
 
 def CreateArgParser() -> argparse:
@@ -292,8 +341,9 @@ if __name__ == '__main__':
         e.addMapping(arg.index, arg.mapping)
 
     if arg.update:
+        e.update_dangerous_downloads_novalid()
         # e.updateDangerousFiles()
-        e.update_json_downloads()
+        # e.update_json_downloads()
     else:
         if arg.file is None:
             logger.critical("The following arguments are required: -f/--file")
