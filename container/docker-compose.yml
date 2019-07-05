@@ -36,7 +36,7 @@ services:
       dockerfile: Dockerfile
     container_name: rest_malware
     volumes:
-      - ./malware/virustotal.db:/root/virustotal.db
+      - ./malware/:/root/
     ports:
       - 8080:8080
     networks:
