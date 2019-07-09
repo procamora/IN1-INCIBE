@@ -10,13 +10,14 @@ from timeit import default_timer as timer
 from typing import NoReturn, Dict, Any, Union
 
 import requests
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, exceptions
 
+import functions
 import querys_elastic
 
 requests.packages.urllib3.disable_warnings()
 
-from functions import getLogger, writeFile
+TIMEOUT = 60
 
 
 class Elastic(object):
@@ -25,8 +26,11 @@ class Elastic(object):
             [ip],
             # http_auth=('user', 'secret'),
             # scheme="http",
+            timeout=TIMEOUT, max_retries=10, retry_on_timeout=True,
             verify_certs=True
         )
+
+        self._es.cluster.health(wait_for_status='yellow', request_timeout=TIMEOUT)
 
         if not self._es.ping():
             raise ValueError("Connection failed, Exiting!!")
@@ -42,9 +46,9 @@ class Elastic(object):
         # create an index in elasticsearch, ignore status code 400 (index already exists)
         try:
             self._es.indices.create(index=myIndex, body=mapping)  # , ignore=400)
-        except:
-            self._logger.error("Index: {} already exists".format(myIndex))
-        self._logger.info('Create index {}'.format(myIndex))
+            self._logger.info(f'Create index {myIndex}')
+        except exceptions.RequestError:
+            self._logger.error(f"Index: {myIndex} already exists")
 
     def insert(self, myIndex, file) -> NoReturn:
         with open(file, 'r') as open_file:
@@ -55,8 +59,7 @@ class Elastic(object):
     def bulk(self, myIndex, file) -> NoReturn:
         contProgress = 0
         incremet = 10000
-        with open(file, 'r') as fp:
-            count_lines = len(fp.readlines())
+        count_lines = functions.get_number_lines_file(file, self._logger)
 
         idElk = 0
         with open(file, 'r') as open_file:
@@ -70,16 +73,17 @@ class Elastic(object):
                     body.append(entry)
                     if len(body) > incremet:
                         contProgress += (incremet // 2)
-                        self._logger.debug('{}/{}'.format(contProgress, count_lines))
-                        response = self._es.bulk(body, index=myIndex, doc_type=self._doc_type)
+                        self._logger.debug(f'{contProgress}/{count_lines}')
+                        response = self._es.bulk(body=body, index=myIndex, doc_type=self._doc_type,
+                                                 request_timeout=TIMEOUT)
                         if self.isError(response):
                             self._logger.critical('Exiting...')
                             sys.exit(1)
                         body.clear()
             # Enviamos el resto de datos
             if len(body) != 0:
-                self._logger.debug('{}/{}'.format(count_lines, count_lines))
-                response = self._es.bulk(body, index=myIndex, doc_type=self._doc_type)
+                self._logger.debug(f'{count_lines}/{count_lines}')
+                response = self._es.bulk(body=body, index=myIndex, doc_type=self._doc_type, request_timeout=TIMEOUT)
                 if self.isError(response):
                     self._logger.critical('Exiting...')
                     sys.exit(1)
@@ -96,39 +100,29 @@ class Elastic(object):
             self._logger.info(t)
             positives = self.malware_analize_shasum(t['shasum'])
             if positives is not None:
-                self._logger.info('Dangarous: {}'.format(positives))
+                self._logger.info(f'Dangarous: {positives}')
                 t['dangerous'] = positives
                 self._logger.debug(entry)
 
         if 'reputation' in t:
             ip = t['idip'].split(',')[-1]
-            reputation = self.malware_analize_reputation_ip(ip)
-            if reputation is not None:
-                t['reputation'] = reputation
-                self._logger.debug(entry)
+            if t['reputation'] == -1:  # actualizo aquellos que no se han podido insertar en el parseo
+                reputation = functions.malware_analize_reputation_ip(ip)
+                if reputation is not None:
+                    t['reputation'] = reputation
+                    # self._logger.debug(entry)
         return json.dumps(t)
 
     def malware_analize_shasum(self, shasum) -> Union[Dict[str, str], None]:
-        url = '{}/analizeHash?hash={}'.format(self._URL, shasum)
+        url = f'{self._URL}/analizeHash?hash={shasum}'
         headers = {'Accept': 'application/json'}
         try:
             r = requests.get(url, headers=headers, timeout=5)
             if r.status_code == 200:
                 return json.loads(r.text)['results']['positives']
             return None
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido comprobar el hash para %s", shasum)  # fixme traducir
-            return None
-
-    def malware_analize_reputation_ip(self, ip) -> Union[int, None]:
-        url = '{}/getReputationIp?ip={}'.format(self._URL, ip)
-        headers = {'Accept': 'application/json'}
-        try:
-            r = requests.get(url, headers=headers, timeout=5)
-            # if r.status_code == 200:
-            return json.loads(r.text)['reputation']
-        except requests.exceptions.ConnectionError:
-            self._logger.warning("No se ha podido comprobar la reputacion para %s", ip)  # fixme traducir
             return None
 
     def isError(self, response) -> bool:
@@ -143,7 +137,7 @@ class Elastic(object):
         maxErrors = 20
         actualErros = 0
         if response['errors']:
-            self._logger.warning('Errors found: {}'.format(len(response['items'])))
+            self._logger.warning(f'Errors found: {len(response["items"])}')
             for i in response['items']:
                 if i['index']['status'] == 400:
                     self._logger.debug(response['errors'])
@@ -161,7 +155,7 @@ class Elastic(object):
         self._logger.info('Update downloaded files')
 
         res = self._es.search(body=querys_elastic.json_search_dangerous_unused)
-        self._logger.info("Got {} files".format(res['hits']['total']))
+        self._logger.info(f"Got {res['hits']['total']} files")
 
         for hit in res['hits']['hits']:
             self._logger.debug(hit['_source'])
@@ -186,7 +180,7 @@ class Elastic(object):
             if r.status_code == 200:
                 return json.loads(r.text)['results']['positives']
             return None
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
             return None
 
@@ -200,7 +194,7 @@ class Elastic(object):
         self._logger.info('search wget/curl files')
 
         response = self._es.search(body=querys_elastic.json_search_wgets)
-        self._logger.info("Got {} files".format(response['hits']['total']))
+        self._logger.info(f"Got {response['hits']['total']} files")
 
         # print(json.dumps(response))
         json_insert = list()
@@ -228,7 +222,7 @@ class Elastic(object):
                     url = search_url.group(1)
                     entry = self.create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url)
                     if entry is not None:
-                        writeFile('{}\n'.format(entry), 'downloads.json', 'a')
+                        functions.writeFile('{}\n'.format(entry), 'downloads.json', 'a')
                         print(entry)
                         self._es.index(index=hit['_index'], doc_type=self._doc_type, body=entry)
                         self._logger.debug('{}/{}'.format(contProgress, count_lines))
@@ -284,7 +278,7 @@ class Elastic(object):
             if r.status_code == 200:
                 return json.loads(r.text)['hash']
             return "-1"
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido comprobar la reputacion para %s", url)  # fixme traducir
             return None
 
@@ -303,7 +297,7 @@ class Elastic(object):
             if r.status_code == 200:
                 return json.loads(r.text)['hash']
             return "-1"
-        except requests.exceptions.ConnectionError:
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido comprobar la reputacion para %s", url)  # fixme traducir
             return None
 
@@ -356,7 +350,7 @@ if __name__ == '__main__':
     startTotal = timer()
 
     arg = CreateArgParser()
-    logger = getLogger(arg.verbose, 'elk')
+    logger = functions.getLogger(arg.verbose, 'elk')
 
     e = Elastic(arg.ip, logger)
 
