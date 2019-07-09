@@ -4,13 +4,13 @@
 
 import json
 import re
-from typing import NoReturn, List, Dict, Any
+from typing import NoReturn, List
 
 from connectionAux import ConnectionAux
 from objectEncoder import ObjectEncoder
 from tables import *
 from threatLevel import ThreatLevel
-from utils.functions import parserDateTime
+from utils.functions import parserDateTime, malware_analize_reputation_ip
 
 
 class NewConnection(json.JSONEncoder):
@@ -191,7 +191,7 @@ class NewConnection(json.JSONEncoder):
 
         return False
 
-    def updateAtributes(self) -> bool:
+    def updateAtributes(self) -> NoReturn:
         """
         Metodo para actualizar los atributos de clasificacion de la sesion
         Comprobamos si la sesion es un scaneo o un ataque de fuerza bruta
@@ -208,7 +208,7 @@ class NewConnection(json.JSONEncoder):
         else:
             self._isBruteForceAttack = False
 
-    def getJSON(self) -> Dict[str, Any]:
+    def getJSON(self) -> str:
         """
         Metodo para obtener un string con toda la informacion de la conexion en formato JSON
 
@@ -230,13 +230,12 @@ class NewConnection(json.JSONEncoder):
 
         return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
 
-    def getJSONCowrie(self) -> Dict[str, Any]:
+    def getJSONCowrie(self, logger, dict_reputation_ip: dict) -> str:
         """
         Metodo para obtener un string con toda la informacion de la conexion en formato JSON
 
         :return: string
         """
-
         # self.updateThreatLevel()
         threatLevel = ThreatLevel()
         self._threatLevel = threatLevel.getThreatLevel(self._listInputs)
@@ -280,9 +279,16 @@ class NewConnection(json.JSONEncoder):
         extendJson = "%s}" % extendJson
         jsonUpdate = json.loads(extendJson)
         jsonUpdate['session'] = self._IdSession
-        # elasticsearch usa booleanos en minusculas
-        jsonUpdate['reputation'] = int(jsonUpdate['reputation'])
-        jsonUpdate['isScanPort'] = jsonUpdate['isScanPort'].lower()
+
+        # primero miramos si la tenemos en el diccionario para evitar peticcion http
+        if self._connectionAux.getIp() in dict_reputation_ip:
+            jsonUpdate['reputation'] = dict_reputation_ip[self._connectionAux.getIp()]
+        else:
+            reput = malware_analize_reputation_ip(self._connectionAux.getIp(), logger)
+            jsonUpdate['reputation'] = reput
+            dict_reputation_ip[self._connectionAux.getIp()] = reput
+
+        jsonUpdate['isScanPort'] = jsonUpdate['isScanPort'].lower()# elasticsearch usa booleanos en minusculas
         jsonUpdate['isBruteForceAttack'] = jsonUpdate['isBruteForceAttack'].lower()
         jsonUpdate.pop('IdSession', None)
 
@@ -379,7 +385,7 @@ class NewConnection(json.JSONEncoder):
             return False
 
     @staticmethod
-    def fromJson(jsonSession, jsonNoSession, simple=True) -> object:
+    def fromJson(jsonSession, jsonNoSession, simple=True):
         aux = ConnectionAux(jsonSession['session']['ip'], jsonSession['IdSession'], jsonSession['session']['starttime'])
         aux.setId(jsonSession['idip'].split(',')[0])
         nCon = NewConnection(aux, False, None)

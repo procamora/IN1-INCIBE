@@ -72,7 +72,7 @@ class Parser(object):
             self._connectionWget.clear()  # Vaciamos la lista/diccionario porque no tiene informacion util en otro log
             self._listCommandWget.clear()
 
-            start = timer()
+            # start = timer()
             try:
                 connectionAuxDict = Parser.getConnections(fname)
                 newConnectionDict = self.setIPtoID(connectionAuxDict, fname)
@@ -80,7 +80,7 @@ class Parser(object):
             except UnicodeDecodeError as error:
                 self._logger.error('Unicode decode error in file: {}'.format(fname))
                 self._logger.debug(traceback.print_tb(error.__traceback__))
-            end = timer()
+            # end = timer()
             # self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
 
         endTotal = timer()

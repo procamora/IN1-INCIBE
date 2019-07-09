@@ -89,15 +89,16 @@ class CompleteSession(object):
 
         with open(self._fileSession, 'r') as f:
             totalLines = f.readlines()
+            count_lines = len(totalLines)
             for num, lineSession in enumerate(totalLines):
                 if num % 500 == 0:  # imprimimos cada 500 lineas
-                    self._logger.debug('{}/{}'.format(num, len(totalLines)))
+                    self._logger.debug('{}/{}'.format(num, count_lines))
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
                     lineSessionJson = json.loads(lineSession)
                     utilizado = self.search(lineSessionJson)
                     if not utilizado:
                         self._jsonNonTrated.append(lineSessionJson)
-            self._logger.debug('{}/{}'.format(len(totalLines), len(totalLines)))
+            self._logger.debug('{}/{}'.format(count_lines, count_lines))
 
         self.writeLogSession()
         self.writeLogNoSession()

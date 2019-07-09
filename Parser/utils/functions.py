@@ -1,15 +1,15 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 import os
 import re
-from http import HTTPStatus  # https://docs.python.org/3/library/http.html
+import subprocess
 from typing import Union, NoReturn
 
 import colorlog  # https://medium.com/@galea/python-logging-example-with-color-formatting-file-handlers-6ee21d363184
 import requests
-from filehash import FileHash
 
 requests.packages.urllib3.disable_warnings()
 
@@ -134,3 +134,43 @@ def checkDir(directory) -> NoReturn:
     if not os.path.isdir(directory):
         os.mkdir(directory)
 
+
+def get_number_lines_file(file: str, loggers: logging) -> int:
+    try:
+        command = f'wc -l {file} | cut -d " " -f1'
+        execute = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = execute.communicate()
+        count_lines = int(stdout)
+        print(count_lines)
+        return count_lines
+    except Exception as e:
+        loggers.warning(e)
+        loggers.warning('Method readlines')
+        with open(file, 'r') as fp:
+            count_lines = len(fp.readlines())
+        return count_lines
+
+
+def malware_analize_reputation_ip(ip: str, loggers: logging) -> int:
+    """
+    Metodo para reguntar por la reputacion de una ip, te devuelve el numero de ataques que se han recibido de esa ip
+    o -2 en caso de no recibir ninguno y -1 si falla la precion
+    :param ip:
+    :param loggers:
+    :return:
+    """
+    URL = "http://127.0.0.1:8080"
+    url = f'{URL}/getReputationIp?ip={ip}'
+    headers = {'Accept': 'application/json'}
+    try:
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+        #try:
+            return json.loads(r.text)['reputation']
+        #except json.decoder.JSONDecodeError:
+        else:
+            return -1
+    except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+        # print(f"No se ha podido comprobar la reputacion para {ip}")  # no se tiene acceso a logger
+        loggers.warning(f"No se ha podido comprobar la reputacion para {ip}")  # fixme traducir
+        return -1
