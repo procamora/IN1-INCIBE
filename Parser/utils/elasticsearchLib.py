@@ -6,6 +6,7 @@ import configparser
 import json
 import re
 import sys
+from http import HTTPStatus  # https://docs.python.org/3/library/http.html
 from timeit import default_timer as timer
 from typing import NoReturn, Dict, Any, Union
 
@@ -151,7 +152,7 @@ class Elastic(object):
         self._logger.info(f"Got {res['hits']['total']} files")
 
         for hit in res['hits']['hits']:
-            self._logger.info(hit['_source']['url'])
+            #self._logger.info(hit['_source']['url'])
             positives = self._malware_analize_url(hit['_source']['url'])
             if positives is not None:
                 self._logger.debug(hit['_source'])
@@ -196,7 +197,9 @@ class Elastic(object):
             responseDownloads = self._es.search(index=hit['_index'], body=json_search_downloads)
             if responseDownloads['hits']['total'] == 0:
                 # self._logger.debug(hit['_source'])
-                regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
+                #regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
+                # fixme pongo obligatorio el http para encontrar la url, fallara???
+                regex = r"((?:http(s):\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
                 search_url = re.search(regex, hit['_source']['input'])
                 if search_url:
                     url = search_url.group(1)
@@ -259,8 +262,11 @@ class Elastic(object):
         headers = {'Accept': 'application/json'}
         try:
             r = requests.get(url, headers=headers)
-            if r.status_code == 200 and json.loads(r.text)['results']['response_code'] == 1:
-                return json.loads(r.text)['results']['positives']
+            resp = json.loads(r.text)
+            if len(resp) == 0:  # fichero offline pero almacenado en la bd
+                return None
+            if r.status_code == HTTPStatus.OK and resp['results']['response_code'] == 1:
+                return resp['results']['positives']
             return None
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido comprobar el hash para %s", shasum)  # fixme traducir
@@ -279,12 +285,15 @@ class Elastic(object):
 
         try:
             r = requests.post(url, data=myjson, headers=headers)
-            # print(r.text)
+            #print(r.text)
             respon = json.loads(r.text)
+            if len(respon) == 0:  # fichero offline pero almacenado en la bd
+                return None
             # si es correcto pero no tiene result es porque es un json con permalink
-            if r.status_code == 200 and respon['results']['response_code'] == 1 and 'positives' in respon['results']:
+            if r.status_code == HTTPStatus.OK and respon['results']['response_code'] == 1 and \
+                    'positives' in respon['results']:
                 return respon['results']['positives']
-            elif r.status_code == 200 and respon['results']['response_code'] == 0:
+            elif r.status_code == HTTPStatus.OK and respon['results']['response_code'] == 0:
                 return -1  # ese hash es desconocido para vt
             return None
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
@@ -303,9 +312,14 @@ class Elastic(object):
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         try:
             r = requests.post(url, data=myjson, headers=headers)
-            if r.status_code == 200 and json.loads(r.text)['results']['response_code'] == 1:
-                print(json.loads(r.text))
-                return json.loads(r.text)['results']['positives']
+            if r.status_code == HTTPStatus.PARTIAL_CONTENT:  # descarga en proceso
+                return None
+            resp = json.loads(r.text)
+            if len(resp) == 0:  # fichero offline pero almacenado en la bd
+                return None
+            elif r.status_code == HTTPStatus.OK and resp['results']['response_code'] == 1:
+                print(resp)
+                return resp['results']['positives']
             return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido descargar para %s", url)  # fixme traducir
@@ -326,8 +340,7 @@ class Elastic(object):
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         try:
             r = requests.post(url, data=myjson, headers=headers)
-            if r.status_code == 200:
-                print(json.loads(r.text))
+            if r.status_code == HTTPStatus.OK:
                 return json.loads(r.text)['hash']
             return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
@@ -396,9 +409,9 @@ if __name__ == '__main__':
         e.create_json_downloads_pending(just_download=False)  # creo json de wget y curl que no existan
 
         # Paso 2 obtener la peligrodisdad de cada hash
-        # e.update_dangerous_downloads_novalid()
         e.update_dangerous_files()
-        # e.update_json_downloads()
+        # no usado
+        # e.update_dangerous_downloads_novalid()
     else:
         if arg.file is None:
             logger.critical("The following arguments are required: -f/--file")
