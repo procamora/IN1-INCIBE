@@ -40,52 +40,52 @@ class Elastic(object):
         self._doc_type = 'object'  # object y nested
         self._URL = "http://127.0.0.1:8080"
 
-    def addMapping(self, myIndex, fileMapping) -> NoReturn:
-        with open(fileMapping, 'r') as fp:
+    def create_mapping(self, my_index, file_mapping) -> NoReturn:
+        with open(file_mapping, 'r') as fp:
             mapping = fp.read()
 
         # create an index in elasticsearch, ignore status code 400 (index already exists)
         try:
-            self._es.indices.create(index=myIndex, body=mapping)  # , ignore=400)
-            self._logger.info(f'Create index {myIndex}')
+            self._es.indices.create(index=my_index, body=mapping)  # , ignore=400)
+            self._logger.info(f'Create index {my_index}')
         except exceptions.RequestError:
-            self._logger.error(f"Index: {myIndex} already exists")
+            self._logger.error(f"Index: {my_index} already exists")
 
-    def insert(self, myIndex, file) -> NoReturn:
+    def insert(self, my_index, file) -> NoReturn:
         with open(file, 'r') as open_file:
             for entry in open_file:
                 if len(entry) > 2:  # evitar lineas en blanco "\n"
-                    self._es.index(index=myIndex, doc_type=self._doc_type, body=entry)
+                    self._es.index(index=my_index, doc_type=self._doc_type, body=entry)
 
-    def bulk(self, myIndex, file) -> NoReturn:
-        contProgress = 0
+    def bulk(self, my_index, file) -> NoReturn:
+        cont_progress = 0
         incremet = 10000
         count_lines = functions.get_number_lines_file(file, self._logger)
 
-        idElk = 0
+        id_elk = 0
         with open(file, 'r') as open_file:
             body = list()
             for entry in open_file:
                 if len(entry) > 2:  # evitar lineas en blanco "\n"
-                    body.append({'index': {'_id': idElk}})
-                    idElk += 1
+                    body.append({'index': {'_id': id_elk}})
+                    id_elk += 1
                     # Intentamos actualizar el campo dangerous y reputation de las descargas si existe en vt
                     entry = self._get_values_pending(entry)
                     body.append(entry)
                     if len(body) > incremet:
-                        contProgress += (incremet // 2)
-                        self._logger.debug(f'{contProgress}/{count_lines}')
-                        response = self._es.bulk(body=body, index=myIndex, doc_type=self._doc_type,
+                        cont_progress += (incremet // 2)
+                        self._logger.debug(f'{cont_progress}/{count_lines}')
+                        response = self._es.bulk(body=body, index=my_index, doc_type=self._doc_type,
                                                  request_timeout=TIMEOUT)
-                        if self._isError(response):
+                        if self._is_error(response):
                             self._logger.critical('Exiting...')
                             sys.exit(1)
                         body.clear()
             # Enviamos el resto de datos
             if len(body) != 0:
                 self._logger.debug(f'{count_lines}/{count_lines}')
-                response = self._es.bulk(body=body, index=myIndex, doc_type=self._doc_type, request_timeout=TIMEOUT)
-                if self._isError(response):
+                response = self._es.bulk(body=body, index=my_index, doc_type=self._doc_type, request_timeout=TIMEOUT)
+                if self._is_error(response):
                     self._logger.critical('Exiting...')
                     sys.exit(1)
 
@@ -108,13 +108,13 @@ class Elastic(object):
         if 'reputation' in t:
             ip = t['idip'].split(',')[-1]
             if t['reputation'] == -1:  # actualizo aquellos que no se han podido insertar en el parseo
-                reputation = functions.malware_get_reputation_ip(ip)
+                reputation = functions.malware_get_reputation_ip(ip, self._logger)
                 if reputation is not None:
                     t['reputation'] = reputation
                     # self._logger.debug(entry)
         return json.dumps(t)
 
-    def _isError(self, response) -> bool:
+    def _is_error(self, response) -> bool:
         """
         Metodo que comrpueba si la respuesta de bulk o insert es correcta, en caso de que no sea correcta muestra
         algunos de los errores y despues informa para finalizar la ejecucion del programa
@@ -123,8 +123,8 @@ class Elastic(object):
         :return:
         """
 
-        maxErrors = 20
-        actualErros = 0
+        max_errors = 20
+        actual_errors = 0
         if response['errors']:
             self._logger.warning(f'Errors found: {len(response["items"])}')
             for i in response['items']:
@@ -132,11 +132,11 @@ class Elastic(object):
                     self._logger.debug(response['errors'])
                     self._logger.debug(i)
                     self._logger.warning(i['index']['error'])
-                    actualErros += 1
-                    if actualErros == maxErrors:
+                    actual_errors += 1
+                    if actual_errors == max_errors:
                         return True
 
-        if actualErros != 0:
+        if actual_errors != 0:
             return True
         return False
 
@@ -152,17 +152,17 @@ class Elastic(object):
         self._logger.info(f"Got {res['hits']['total']} files")
 
         for hit in res['hits']['hits']:
-            #self._logger.info(hit['_source']['url'])
+            # self._logger.info(hit['_source']['url'])
             positives = self._malware_analize_url(hit['_source']['url'])
             if positives is not None:
                 self._logger.debug(hit['_source'])
-                jsonUpdate = \
+                json_update = \
                     {
                         "doc": {
                             "dangerous": positives
                         }
                     }
-                self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
+                self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=json_update)
 
     def create_json_downloads_pending(self, just_download: bool) -> NoReturn:
         """
@@ -177,7 +177,7 @@ class Elastic(object):
         self._logger.info(f"Got {len(response['hits']['hits'])} files")
 
         # print(json.dumps(response))
-        json_insert = list()
+        # json_insert = list()
         count_lines = len(response['hits']['hits'])
         count_progress = 1
         for hit in response['hits']['hits']:
@@ -194,10 +194,10 @@ class Elastic(object):
                             {"match": {"url": hit['_source']['input']}}
                         ]}}}
 
-            responseDownloads = self._es.search(index=hit['_index'], body=json_search_downloads)
-            if responseDownloads['hits']['total'] == 0:
+            response_downloads = self._es.search(index=hit['_index'], body=json_search_downloads)
+            if response_downloads['hits']['total'] == 0:
                 # self._logger.debug(hit['_source'])
-                #regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
+                # regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
                 # fixme pongo obligatorio el http para encontrar la url, fallara???
                 regex = r"((?:http(s):\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
                 search_url = re.search(regex, hit['_source']['input'])
@@ -285,7 +285,7 @@ class Elastic(object):
 
         try:
             r = requests.post(url, data=myjson, headers=headers)
-            #print(r.text)
+            # print(r.text)
             respon = json.loads(r.text)
             if len(respon) == 0:  # fichero offline pero almacenado en la bd
                 return None
@@ -303,7 +303,7 @@ class Elastic(object):
     def _malware_download_url(self, url_download: str) -> Union[str, None]:
         """
         Metodo para pedir que se descargue una url
-        :param url:
+        :param url_download:
         :return:
         """
         url = f'{self._URL}/downloadUrl'
@@ -322,7 +322,7 @@ class Elastic(object):
                 return resp['results']['positives']
             return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            self._logger.warning("No se ha podido descargar para %s", url)  # fixme traducir
+            self._logger.warning("No se ha podido descargar para %s", url_download)  # fixme traducir
             return None
 
     def _malware_get_hash_url(self, url_download) -> Union[str, None]:
@@ -331,7 +331,7 @@ class Elastic(object):
         si la conoce retorna su hash
         sino la conoce retorna -1
         si falla al enviar la peticion retorna None (No deberia ocurrir nunca)
-        :param url:
+        :param url_download:
         :return:
         """
         url = f'{self._URL}/getHash'
@@ -344,7 +344,7 @@ class Elastic(object):
                 return json.loads(r.text)['hash']
             return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            self._logger.warning("No se ha podido obtener el hash para %s", url)  # fixme traducir
+            self._logger.warning("No se ha podido obtener el hash para %s", url_download)  # fixme traducir
             return None
 
     def update_dangerous_downloads_novalid(self):
@@ -352,16 +352,16 @@ class Elastic(object):
         self._logger.info("Gots {} files".format(res['hits']['total']))
         for hit in res['hits']['hits']:
             self._logger.debug(hit['_source'])
-            jsonUpdate = \
+            json_update = \
                 {
                     "doc": {
                         "dangerous": -2
                     }
                 }
-            self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
+            self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=json_update)
 
 
-def CreateArgParser() -> argparse:
+def create_arg() -> argparse:
     """
     Metodo para establecer los argumentos que necesita la clase
 
@@ -373,35 +373,35 @@ def CreateArgParser() -> argparse:
 
     example = 'python3 %(prog)s -f ../output/cowrie.completed.json -ip "127.0.0.1:9200" -i cowrie-s2 ' \
               '-m mapping.json -v'
-    myParser = argparse.ArgumentParser(description='%(prog)s is a script to enter data in the elasticsearch database.',
-                                       usage='{}'.format(example))
+    my_parser = argparse.ArgumentParser(description='%(prog)s is a script to enter data in the elasticsearch database.',
+                                        usage='{}'.format(example))
 
-    myParser.add_argument('-f', '--file', help='File to upload.')
-    myParser.add_argument('-m', '--mapping', help='Path of the file where the mapping of the attributes is defined.')
-    myParser.add_argument('-ip', '--ip', help='IP address of the server where ElasticSearch is located.')
-    myParser.add_argument('-i', '--index', help='Name of the index.')
-    myParser.add_argument('-b', '--bulk', action='store_true', help='bulk mode (boolean).', default=True)
-    myParser.add_argument('-u', '--update', action='store_true', help='update dangerous files (boolean).',
-                          default=False)
-    myParser.add_argument('-v', '--verbose', action='store_true', help='Verbose flag (boolean).', default=False)
+    my_parser.add_argument('-f', '--file', help='File to upload.')
+    my_parser.add_argument('-m', '--mapping', help='Path of the file where the mapping of the attributes is defined.')
+    my_parser.add_argument('-ip', '--ip', help='IP address of the server where ElasticSearch is located.')
+    my_parser.add_argument('-i', '--index', help='Name of the index.')
+    my_parser.add_argument('-b', '--bulk', action='store_true', help='bulk mode (boolean).', default=True)
+    my_parser.add_argument('-u', '--update', action='store_true', help='update dangerous files (boolean).',
+                           default=False)
+    my_parser.add_argument('-v', '--verbose', action='store_true', help='Verbose flag (boolean).', default=False)
 
     # tambien lo puedo poner en la misma linea
-    myParser.set_defaults(ip=config['DEFAULTS']['ELASTIC_IP'])
-    myParser.set_defaults(index=config['DEFAULTS']['ELASTIC_INDEX'])
+    my_parser.set_defaults(ip=config['DEFAULTS']['ELASTIC_IP'])
+    my_parser.set_defaults(index=config['DEFAULTS']['ELASTIC_INDEX'])
     # myParser.print_help()
-    return myParser.parse_args()
+    return my_parser.parse_args()
 
 
 if __name__ == '__main__':
     startTotal = timer()
 
-    arg = CreateArgParser()
+    arg = create_arg()
     logger = functions.getLogger(arg.verbose, 'elk')
 
     e = Elastic(arg.ip, logger)
 
     if arg.mapping is not None:
-        e.addMapping(arg.index, arg.mapping)
+        e.create_mapping(arg.index, arg.mapping)
 
     if arg.update:
         # Paso 1 crear json descargas y obtener el hash de cada uno
