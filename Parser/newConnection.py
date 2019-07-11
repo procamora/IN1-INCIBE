@@ -10,7 +10,7 @@ from connectionAux import ConnectionAux
 from objectEncoder import ObjectEncoder
 from tables import *
 from threatLevel import ThreatLevel
-from utils.functions import parserDateTime, malware_analize_reputation_ip
+from utils.functions import parserDateTime, malware_get_reputation_ip
 
 
 class NewConnection(json.JSONEncoder):
@@ -284,7 +284,7 @@ class NewConnection(json.JSONEncoder):
         if self._connectionAux.getIp() in dict_reputation_ip:
             jsonUpdate['reputation'] = dict_reputation_ip[self._connectionAux.getIp()]
         else:
-            reput = malware_analize_reputation_ip(self._connectionAux.getIp(), logger)
+            reput = malware_get_reputation_ip(self._connectionAux.getIp(), logger)
             jsonUpdate['reputation'] = reput
             dict_reputation_ip[self._connectionAux.getIp()] = reput
 

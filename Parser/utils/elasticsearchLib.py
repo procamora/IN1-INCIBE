@@ -69,14 +69,14 @@ class Elastic(object):
                     body.append({'index': {'_id': idElk}})
                     idElk += 1
                     # Intentamos actualizar el campo dangerous y reputation de las descargas si existe en vt
-                    entry = self.get_values_pending(entry)
+                    entry = self._get_values_pending(entry)
                     body.append(entry)
                     if len(body) > incremet:
                         contProgress += (incremet // 2)
                         self._logger.debug(f'{contProgress}/{count_lines}')
                         response = self._es.bulk(body=body, index=myIndex, doc_type=self._doc_type,
                                                  request_timeout=TIMEOUT)
-                        if self.isError(response):
+                        if self._isError(response):
                             self._logger.critical('Exiting...')
                             sys.exit(1)
                         body.clear()
@@ -84,11 +84,11 @@ class Elastic(object):
             if len(body) != 0:
                 self._logger.debug(f'{count_lines}/{count_lines}')
                 response = self._es.bulk(body=body, index=myIndex, doc_type=self._doc_type, request_timeout=TIMEOUT)
-                if self.isError(response):
+                if self._isError(response):
                     self._logger.critical('Exiting...')
                     sys.exit(1)
 
-    def get_values_pending(self, entry) -> Dict[str, Any]:
+    def _get_values_pending(self, entry) -> Dict[str, Any]:
         """
         Metodo para actualizar el valor dangerous preguntando por el hash del fichero y la reputacion de la ip
 
@@ -98,7 +98,7 @@ class Elastic(object):
         t = json.loads(entry)
         if 'dangerous' in t:
             self._logger.info(t)
-            positives = self.malware_analize_shasum(t['shasum'])
+            positives = self._malware_analize_shasum(t['shasum'])
             if positives is not None:
                 self._logger.info(f'Dangarous: {positives}')
                 t['dangerous'] = positives
@@ -107,25 +107,13 @@ class Elastic(object):
         if 'reputation' in t:
             ip = t['idip'].split(',')[-1]
             if t['reputation'] == -1:  # actualizo aquellos que no se han podido insertar en el parseo
-                reputation = functions.malware_analize_reputation_ip(ip)
+                reputation = functions.malware_get_reputation_ip(ip)
                 if reputation is not None:
                     t['reputation'] = reputation
                     # self._logger.debug(entry)
         return json.dumps(t)
 
-    def malware_analize_shasum(self, shasum) -> Union[Dict[str, str], None]:
-        url = f'{self._URL}/analizeHash?hash={shasum}'
-        headers = {'Accept': 'application/json'}
-        try:
-            r = requests.get(url, headers=headers, timeout=5)
-            if r.status_code == 200:
-                return json.loads(r.text)['results']['positives']
-            return None
-        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            self._logger.warning("No se ha podido comprobar el hash para %s", shasum)  # fixme traducir
-            return None
-
-    def isError(self, response) -> bool:
+    def _isError(self, response) -> bool:
         """
         Metodo que comrpueba si la respuesta de bulk o insert es correcta, en caso de que no sea correcta muestra
         algunos de los errores y despues informa para finalizar la ejecucion del programa
@@ -159,7 +147,7 @@ class Elastic(object):
 
         for hit in res['hits']['hits']:
             self._logger.debug(hit['_source'])
-            positives = self.malware_analize_url(hit['_source']['url'])
+            positives = self._malware_analize_url(hit['_source']['url'])
             if positives is not None:
                 jsonUpdate = \
                     {
@@ -168,21 +156,6 @@ class Elastic(object):
                         }
                     }
                 self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
-
-    def malware_analize_url(self, url_analize) -> Union[Dict[str, str], None]:
-        data = '{"url": "%s"}' % url_analize
-        myjson = json.dumps(json.loads(data))
-        url = '{}/analize'.format(self._URL)
-        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
-
-        try:
-            r = requests.post(url, data=myjson, headers=headers, timeout=5)
-            if r.status_code == 200:
-                return json.loads(r.text)['results']['positives']
-            return None
-        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
-            return None
 
     def create_json_downloads_pending(self) -> NoReturn:
         """
@@ -214,13 +187,13 @@ class Elastic(object):
                             {"match": {"url": hit['_source']['input']}}
                         ]}}}
 
-            responseDownloads = self._es.search(body=json_search_downloads)
+            responseDownloads = self._es.search(index=hit['_index'], body=json_search_downloads)
             if responseDownloads['hits']['total'] == 0:
                 regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
                 search_url = re.search(regex, hit['_source']['input'])
                 if search_url:
                     url = search_url.group(1)
-                    entry = self.create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url)
+                    entry = self._create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url)
                     if entry is not None:
                         functions.writeFile('{}\n'.format(entry), 'downloads.json', 'a')
                         print(entry)
@@ -228,7 +201,7 @@ class Elastic(object):
                         self._logger.debug('{}/{}'.format(contProgress, count_lines))
                         contProgress += 1
 
-    def create_json_donwload(self, session: str, timestamp: str, url: str) -> Dict[str, str]:
+    def _create_json_donwload(self, session: str, timestamp: str, url: str) -> Dict[str, str]:
         """
         Metodo para crear un json de tipo descarga dada una url
         Si no se consige saber si la descarga es peligrosa pondremos un -1
@@ -239,19 +212,22 @@ class Elastic(object):
         :param url:
         :return:
         """
-        shasum = self.malware_analize_hash_url(url)
+        # intentamos obtener el hash de la url si esta ya en la bd local
+        shasum = self._malware_get_hash_url(url)
 
         if shasum is None or shasum == '-1':
-            self.malware_analize_download_url(url)  # descargamos el fichero, para tenerlo en la siguiente iteracion
+            # descargamos el fichero, para tenerlo en la siguiente iteracion
+            downloable = self._malware_download_url(url)
+            # shasum = self._malware_get_hash_url(url)
 
-        if shasum is None:
-            self._logger.warning('Can not be downloaded {}'.format(url))
-            json_table = {'session': session, 'timestamp': timestamp, 'url': url, 'outfile': "-1", 'shasum': "-1",
-                          'dangerous': -2, 'eventid': 'cowrie.session.file_download'}
-            return json.dumps(json_table)
+            if downloable is None:
+                self._logger.warning('Can not be downloaded {}'.format(url))
+                json_table = {'session': session, 'timestamp': timestamp, 'url': url, 'outfile': "-1", 'shasum': "-1",
+                              'dangerous': -2, 'eventid': 'cowrie.session.file_download'}
+                return json.dumps(json_table)
 
         outfile = 'var/lib/cowrie/downloads/{}'.format(shasum)
-        positives = self.malware_analize_shasum(shasum)
+        positives = self._malware_analize_shasum(shasum)
         if positives is not None:
             dangerous = positives
         else:
@@ -260,7 +236,67 @@ class Elastic(object):
                       'dangerous': dangerous, 'eventid': 'cowrie.session.file_download'}
         return json.dumps(json_table)
 
-    def malware_analize_hash_url(self, url) -> Union[str, None]:
+    def _malware_analize_shasum(self, shasum) -> Union[Dict[str, str], None]:
+        """
+        Metodo para preguntar al repositorio de malware por la peligrosidad de un hash
+        :param shasum:
+        :return:
+        """
+        if shasum == '-1':
+            return None
+
+        url = f'{self._URL}/analizeHash?hash={shasum}'
+        print(url)
+        headers = {'Accept': 'application/json'}
+        try:
+            r = requests.get(url, headers=headers)
+            if r.status_code == 200:
+                return json.loads(r.text)['results']['positives']
+            return None
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            self._logger.warning("No se ha podido comprobar el hash para %s", shasum)  # fixme traducir
+            return None
+
+    def _malware_analize_url(self, url_analize) -> Union[Dict[str, str], None]:
+        """
+        Metodo para preguntar al repositorio de malware por la peligrosidad de una url
+        :param url_analize:
+        :return:
+        """
+        url = f'{self._URL}/analizeUrl'
+        data = '{"url": "%s"}' % url_analize
+        myjson = json.dumps(json.loads(data))
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+
+        try:
+            r = requests.post(url, data=myjson, headers=headers)
+            if r.status_code == 200:
+                return json.loads(r.text)['results']['positives']
+            return None
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
+            return None
+
+    def _malware_download_url(self, url_download) -> Union[str, None]:
+        """
+        Metodo para pedir que se descargue una url
+        :param url:
+        :return:
+        """
+        url = f'{self._URL}/downloadUrl'
+        data = '{"url": "%s"}' % url_download
+        myjson = json.dumps(json.loads(data))
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        try:
+            r = requests.post(url, data=myjson, headers=headers)
+            if r.status_code == 200:
+                return json.loads(r.text)['hash']
+            return "-1"
+        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+            self._logger.warning("No se ha podido descargar para %s", url)  # fixme traducir
+            return None
+
+    def _malware_get_hash_url(self, url_download) -> Union[str, None]:
         """
         Metodo para preguntar al respositorio de malware si conoce esa url,
         si la conoce retorna su hash
@@ -269,36 +305,17 @@ class Elastic(object):
         :param url:
         :return:
         """
-        data = '{"url": "%s"}' % url
+        url = f'{self._URL}/getHash'
+        data = '{"url": "%s"}' % url_download
         myjson = json.dumps(json.loads(data))
-        url = '{}/getHash'.format(self._URL)
-        headers = {'Accept': 'application/json'}
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         try:
-            r = requests.post(url, data=myjson, headers=headers, timeout=5)
+            r = requests.post(url, data=myjson, headers=headers)
             if r.status_code == 200:
                 return json.loads(r.text)['hash']
             return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            self._logger.warning("No se ha podido comprobar la reputacion para %s", url)  # fixme traducir
-            return None
-
-    def malware_analize_download_url(self, url) -> Union[str, None]:
-        """
-        Metodo para pedir que se descargue una url
-        :param url:
-        :return:
-        """
-        data = '{"url": "%s"}' % url
-        myjson = json.dumps(json.loads(data))
-        url = '{}/downloadUrl'.format(self._URL)
-        headers = {'Accept': 'application/json'}
-        try:
-            r = requests.post(url, data=myjson, headers=headers, timeout=5)
-            if r.status_code == 200:
-                return json.loads(r.text)['hash']
-            return "-1"
-        except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
-            self._logger.warning("No se ha podido comprobar la reputacion para %s", url)  # fixme traducir
+            self._logger.warning("No se ha podido obtener el hash para %s", url)  # fixme traducir
             return None
 
     def update_dangerous_downloads_novalid(self):
@@ -358,7 +375,8 @@ if __name__ == '__main__':
         e.addMapping(arg.index, arg.mapping)
 
     if arg.update:
-        e.update_dangerous_downloads_novalid()
+        e.create_json_downloads_pending()  # creo json de wget y curl que no existan
+        # e.update_dangerous_downloads_novalid()
         # e.updateDangerousFiles()
         # e.update_json_downloads()
     else:

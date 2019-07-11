@@ -151,7 +151,7 @@ def get_number_lines_file(file: str, loggers: logging) -> int:
         return count_lines
 
 
-def malware_analize_reputation_ip(ip: str, loggers: logging) -> int:
+def malware_get_reputation_ip(ip: str, loggers: logging) -> int:
     """
     Metodo para reguntar por la reputacion de una ip, te devuelve el numero de ataques que se han recibido de esa ip
     o -2 en caso de no recibir ninguno y -1 si falla la precion
