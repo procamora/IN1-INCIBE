@@ -14,7 +14,7 @@ import requests
 requests.packages.urllib3.disable_warnings()
 
 
-def getLogger(verbose, name='Parser') -> colorlog:
+def getLogger(verbose: bool, name: str = 'Parser') -> colorlog:
     # Desabilita log de modulos
     # for _ in ("boto", "elasticsearch", "urllib3"):
     #    logging.getLogger(_).setLevel(logging.CRITICAL)
@@ -40,7 +40,7 @@ def getLogger(verbose, name='Parser') -> colorlog:
     return log
 
 
-def parserDateTime(line) -> str:
+def parserDateTime(line: str) -> str:
     """
     Metodo para obtener la fecha y hora de cualquier linea, si hay una T como separador entre la fecha y la hora ls
     sustituyo por un espacio en blanco y retorno solo la fecha hora, quitando las fracciones de segungo y zona horaria
@@ -165,9 +165,9 @@ def malware_get_reputation_ip(ip: str, loggers: logging) -> int:
     try:
         r = requests.get(url, headers=headers, timeout=5)
         if r.status_code == 200:
-        #try:
+            # try:
             return json.loads(r.text)['reputation']
-        #except json.decoder.JSONDecodeError:
+        # except json.decoder.JSONDecodeError:
         else:
             return -1
     except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
