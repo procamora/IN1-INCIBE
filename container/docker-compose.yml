@@ -41,6 +41,9 @@ services:
       - 8080:8080
     networks:
       - elk
+    tty: true
+    environment: 
+      - TERM=xterm-256color
 
   cowrie:
     # docker run -p 2222:2222 cowrie/cowrie
