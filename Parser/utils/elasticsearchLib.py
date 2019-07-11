@@ -157,7 +157,7 @@ class Elastic(object):
                     }
                 self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=jsonUpdate)
 
-    def create_json_downloads_pending(self) -> NoReturn:
+    def create_json_downloads_pending(self, just_download: bool) -> NoReturn:
         """
         Metodo que se llama con el metodo update, busca todos los comandos wget y curl que no tienen asociada una
         descarga y crea un json con su informmacion, dangerous y hash se intentan calcular de la bd local, sino se
@@ -167,7 +167,7 @@ class Elastic(object):
         self._logger.info('search wget/curl files')
 
         response = self._es.search(body=querys_elastic.json_search_wgets)
-        self._logger.info(f"Got {response['hits']['total']} files")
+        self._logger.info(f"Got {len(response['hits']['hits'])} files")
 
         # print(json.dumps(response))
         json_insert = list()
@@ -193,7 +193,8 @@ class Elastic(object):
                 search_url = re.search(regex, hit['_source']['input'])
                 if search_url:
                     url = search_url.group(1)
-                    entry = self._create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url)
+                    entry = self._create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url,
+                                                       just_download)
                     if entry is not None:
                         functions.writeFile('{}\n'.format(entry), 'downloads.json', 'a')
                         print(entry)
@@ -201,7 +202,8 @@ class Elastic(object):
                         self._logger.debug('{}/{}'.format(contProgress, count_lines))
                         contProgress += 1
 
-    def _create_json_donwload(self, session: str, timestamp: str, url: str) -> Dict[str, str]:
+    def _create_json_donwload(self, session: str, timestamp: str, url: str, just_download: bool) \
+            -> Union[Dict[str, str], None]:
         """
         Metodo para crear un json de tipo descarga dada una url
         Si no se consige saber si la descarga es peligrosa pondremos un -1
@@ -212,6 +214,11 @@ class Elastic(object):
         :param url:
         :return:
         """
+
+        if just_download:  # primera iteracion pide que descargue todos lso ficheros
+            self._malware_download_url(url)
+            return None
+
         # intentamos obtener el hash de la url si esta ya en la bd local
         shasum = self._malware_get_hash_url(url)
 
@@ -250,7 +257,7 @@ class Elastic(object):
         headers = {'Accept': 'application/json'}
         try:
             r = requests.get(url, headers=headers)
-            if r.status_code == 200:
+            if r.status_code == 200 and json.loads(r.text)['results']['response_code'] == 1:
                 return json.loads(r.text)['results']['positives']
             return None
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
@@ -270,7 +277,7 @@ class Elastic(object):
 
         try:
             r = requests.post(url, data=myjson, headers=headers)
-            if r.status_code == 200:
+            if r.status_code == 200 and json.loads(r.text)['results']['response_code'] == 1:
                 return json.loads(r.text)['results']['positives']
             return None
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
@@ -289,8 +296,9 @@ class Elastic(object):
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         try:
             r = requests.post(url, data=myjson, headers=headers)
-            if r.status_code == 200:
-                return json.loads(r.text)['hash']
+            if r.status_code == 200 and json.loads(r.text)['results']['response_code'] == 1:
+                print( json.loads(r.text))
+                return json.loads(r.text)['results']['positives']
             return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido descargar para %s", url)  # fixme traducir
@@ -312,6 +320,7 @@ class Elastic(object):
         try:
             r = requests.post(url, data=myjson, headers=headers)
             if r.status_code == 200:
+                print(json.loads(r.text))
                 return json.loads(r.text)['hash']
             return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
@@ -375,7 +384,8 @@ if __name__ == '__main__':
         e.addMapping(arg.index, arg.mapping)
 
     if arg.update:
-        e.create_json_downloads_pending()  # creo json de wget y curl que no existan
+        e.create_json_downloads_pending(just_download=True)  # creo json de wget y curl que no existan
+        e.create_json_downloads_pending(just_download=False)  # creo json de wget y curl que no existan
         # e.update_dangerous_downloads_novalid()
         # e.updateDangerousFiles()
         # e.update_json_downloads()
