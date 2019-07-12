@@ -14,18 +14,18 @@ import requests
 requests.packages.urllib3.disable_warnings()
 
 
-def getLogger(verbose: bool, name: str = 'Parser') -> colorlog:
+def get_logger(verbose: bool, name: str = 'Parser') -> colorlog:
     # Desabilita log de modulos
     # for _ in ("boto", "elasticsearch", "urllib3"):
     #    logging.getLogger(_).setLevel(logging.CRITICAL)
 
-    logFormat = '%(levelname)s - %(module)s - %(message)s'
+    log_format = '%(levelname)s - %(module)s - %(message)s'
 
     bold_seq = '\033[1m'
     colorlog_format = (
         f'{bold_seq} '
         '%(log_color)s '
-        f'{logFormat}'
+        f'{log_format}'
     )
 
     colorlog.basicConfig(format=colorlog_format)
@@ -40,7 +40,7 @@ def getLogger(verbose: bool, name: str = 'Parser') -> colorlog:
     return log
 
 
-def parserDateTime(line: str) -> str:
+def parser_date_time(line: str) -> str:
     """
     Metodo para obtener la fecha y hora de cualquier linea, si hay una T como separador entre la fecha y la hora ls
     sustituyo por un espacio en blanco y retorno solo la fecha hora, quitando las fracciones de segungo y zona horaria
@@ -49,12 +49,12 @@ def parserDateTime(line: str) -> str:
     :param line:
     :return:
     """
-    regexDatetime = r'\d{4}-\d{2}-\d{2}(T| )\d{2}:\d{2}:\d{2}\.\d+(\+\d+|\w)'
-    datetime = re.search(regexDatetime, line).group(0)
+    regex_datetime = r'\d{4}-\d{2}-\d{2}(T| )\d{2}:\d{2}:\d{2}\.\d+(\+\d+|\w)'
+    datetime = re.search(regex_datetime, line).group(0)
     return datetime.replace('T', ' ').split('.')[0]
 
 
-def getSession(line) -> str:
+def get_session(line) -> str:
     """
     Metodo para obtener la sesion. Esta unicamente en la linea New connection
 
@@ -65,7 +65,7 @@ def getSession(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIp(line) -> str:
+def parser_ip(line) -> str:
     """
     Metodo para obtener la ip. funciona unicamente en la linea New connection
 
@@ -76,7 +76,7 @@ def parserIp(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIpAnyLine(line) -> str:
+def parser_ip_any_line(line) -> str:
     """
     Metodo para obtener la ip de cualquier linea
 
@@ -87,7 +87,7 @@ def parserIpAnyLine(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIdtoSession(line) -> str:
+def parser_id_to_session(line) -> str:
     """
     Metodo para obtener el id de una conexion, este id junto a la ip identifican los log de una sesion
 
@@ -98,7 +98,7 @@ def parserIdtoSession(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIdIp(line) -> Union[str, None]:
+def parser_id_ip(line) -> Union[str, None]:
     """
     Metodo para obtener el id y la ip de una conexion
 
@@ -112,7 +112,7 @@ def parserIdIp(line) -> Union[str, None]:
     return None
 
 
-def writeFile(text, fout, mode) -> NoReturn:
+def write_file(text: str, fout: str, mode: str) -> NoReturn:
     """
     Metodo para escribir todos los INSERT INTO en un fichero
 
@@ -125,7 +125,7 @@ def writeFile(text, fout, mode) -> NoReturn:
         fp.write(text)
 
 
-def checkDir(directory) -> NoReturn:
+def check_dir(directory: str) -> NoReturn:
     """
     Metodo que comprueeba si existe un directorio, si no existe lo crea
     :param directory:

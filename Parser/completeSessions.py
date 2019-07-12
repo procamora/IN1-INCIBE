@@ -7,11 +7,11 @@ from timeit import default_timer as timer
 from typing import NoReturn
 
 from newConnection import NewConnection
-from utils.functions import checkDir, writeFile
+from utils.functions import check_dir, write_file
 
 
 class CompleteSession(object):
-    def __init__(self, logger, output, myConfig) -> NoReturn:
+    def __init__(self, logger, output, my_config) -> NoReturn:
         """
         Constructor de clase
 
@@ -22,33 +22,33 @@ class CompleteSession(object):
         config.sections()
         config.read('settings.conf')
 
-        checkDir(output)
+        check_dir(output)
 
         self._logger = logger
 
-        self._fileSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_SESSION'])
-        self._fileNoSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_NOSESSION'])
-        self._fileSessionOutput = '{}/{}'.format(output, config[myConfig]['FILE_LOG_COMPLETED'])
-        self._fileNoSessionOutput = '{}/{}.2.json'.format(output, config[myConfig]['FILE_LOG_NOSESSION'])
-        self._outputJson = str()
-        self._jsonNonTrated = list()
+        self._file_session = '{}/{}'.format(output, config[my_config]['FILE_LOG_SESSION'])
+        self._file_no_session = '{}/{}'.format(output, config[my_config]['FILE_LOG_NOSESSION'])
+        self._file_session_output = '{}/{}'.format(output, config[my_config]['FILE_LOG_COMPLETED'])
+        self._file_no_session_output = '{}/{}.2.json'.format(output, config[my_config]['FILE_LOG_NOSESSION'])
+        self._output_json = str()
+        self._json_non_trated = list()
 
-        with open(self._fileNoSession, 'r') as f:
-            self._linesNoSession = f.readlines()
+        with open(self._file_no_session, 'r') as f:
+            self._lines_no_session = f.readlines()
 
-    def search(self, lineSessionJson) -> bool:
+    def search(self, line_session_json) -> bool:
         """
         Metodo para comprobar si hay alguna linea de sesion no iniciada que coincide con una sesion iniciada dada
 
-        :param lineSessionJson:
+        :param line_session_json:
         :return:
         """
-        for lineNoSession in self._linesNoSession:
-            lineNoSessionJson = json.loads(lineNoSession)
-            if len(lineNoSession) > 2 and lineSessionJson['idip'] == lineNoSessionJson['idip']:
-                a = NewConnection.fromJson(lineSessionJson, lineNoSessionJson)
-                self._outputJson += a.getJSON()
-                self._linesNoSession.remove(lineNoSession)  # Elimino la linea usada mejorado la eficiencia
+        for line_no_session in self._lines_no_session:
+            line_no_session_json = json.loads(line_no_session)
+            if len(line_no_session) > 2 and line_session_json['idip'] == line_no_session_json['idip']:
+                a = NewConnection.fromJson(line_session_json, line_no_session_json)
+                self._output_json += a.getJSON()
+                self._lines_no_session.remove(line_no_session)  # Elimino la linea usada mejorado la eficiencia
                 return True
         return False
 
@@ -58,7 +58,7 @@ class CompleteSession(object):
 
         :return:
         """
-        writeFile(self._outputJson, self._fileSessionOutput, 'a')
+        write_file(self._output_json, self._file_session_output, 'a')
 
     def writeLogNoSession(self) -> NoReturn:
         """
@@ -69,14 +69,14 @@ class CompleteSession(object):
         """
         log = str()
 
-        for i in self._jsonNonTrated:
+        for i in self._json_non_trated:
             log += '{}\n'.format(json.dumps(i['geoip']))
 
-        for i in self._linesNoSession:
+        for i in self._lines_no_session:
             j = json.loads(i)['geoip']
             log += '{}\n'.format(json.dumps(j))
 
-        writeFile(log, self._fileNoSessionOutput, 'w')
+        write_file(log, self._file_no_session_output, 'w')
 
     def run(self) -> NoReturn:
         """
@@ -87,7 +87,7 @@ class CompleteSession(object):
         """
         startTotal = timer()
 
-        with open(self._fileSession, 'r') as f:
+        with open(self._file_session, 'r') as f:
             totalLines = f.readlines()
             count_lines = len(totalLines)
             for num, lineSession in enumerate(totalLines):
@@ -97,7 +97,7 @@ class CompleteSession(object):
                     lineSessionJson = json.loads(lineSession)
                     utilizado = self.search(lineSessionJson)
                     if not utilizado:
-                        self._jsonNonTrated.append(lineSessionJson)
+                        self._json_non_trated.append(lineSessionJson)
             self._logger.debug('{}/{}'.format(count_lines, count_lines))
 
         self.writeLogSession()

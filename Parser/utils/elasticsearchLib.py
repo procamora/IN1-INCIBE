@@ -206,7 +206,7 @@ class Elastic(object):
                     entry = self._create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url,
                                                        just_download)
                     if entry is not None:
-                        functions.writeFile('{}\n'.format(entry), 'downloads.json', 'a')
+                        functions.write_file('{}\n'.format(entry), 'downloads.json', 'a')
                         print(entry)
                         self._es.index(index=hit['_index'], doc_type=self._doc_type, body=entry)
 
@@ -396,7 +396,7 @@ if __name__ == '__main__':
     startTotal = timer()
 
     arg = create_arg()
-    logger = functions.getLogger(arg.verbose, 'elk')
+    logger = functions.get_logger(arg.verbose, 'elk')
 
     e = Elastic(arg.ip, logger)
 

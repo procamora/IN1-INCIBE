@@ -9,7 +9,7 @@ from timeit import default_timer as timer
 from compatible import Compatible
 from completeSessions import CompleteSession
 from parser import Parser
-from utils.functions import getLogger
+from utils.functions import get_logger
 
 config = configparser.ConfigParser()
 config.sections()
@@ -43,7 +43,7 @@ def CreateArgParser() -> argparse:
 if __name__ == "__main__":
     arg = CreateArgParser()
 
-    logger = getLogger(arg.verbose)
+    logger = get_logger(arg.verbose)
 
     logger.info('Start Parser')
     start = timer()

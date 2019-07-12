@@ -19,23 +19,23 @@ class ThreatLevel(object):
                          'rm', 'sh', 'bash', 'busybox', 'reSuSEfirewall', 'SuSEfirewall', 'killall',
                          'kill', 'pkill', 'sleep', 'sudo', 'nohup', 'poweroff', 'reboot', 'halt', 'exec']
 
-    def checkArgument(self) -> int:
+    def check_argument(self) -> int:
         # echo -ne
         # history -c
         #
         return 1
 
-    def getThreatLevel(self, listInputs) -> int:
-        if len(listInputs) == 0:
+    def get_threat_level(self, list_inputs) -> int:
+        if len(list_inputs) == 0:
             return 4
 
-        for commands in listInputs:
-            command = commands.getInput().split(' ')[0]  # Obtenemos solo el comando
+        for commands in list_inputs:
+            command = commands.get_input().split(' ')[0]  # Obtenemos solo el comando
             if command in self._LEVEL_1:
                 return 1
 
-        for commands in listInputs:
-            command = commands.getInput().split(' ')[0]  # Obtenemos solo el comando
+        for commands in list_inputs:
+            command = commands.get_input().split(' ')[0]  # Obtenemos solo el comando
             if command in self._LEVEL_2:
                 return 2
 
