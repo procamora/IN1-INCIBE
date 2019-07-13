@@ -1,7 +1,7 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
-QUERY_SIZE = 10000
+QUERY_SIZE = 1000
 
 # Query para buscar todas las descargas en las que aun no se ha puesto su peligrosidad
 json_search_dangerous_unused = \

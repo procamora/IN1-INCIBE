@@ -18,7 +18,7 @@ import querys_elastic
 
 requests.packages.urllib3.disable_warnings()
 
-TIMEOUT = 60
+TIMEOUT = 600
 
 
 class Elastic(object):
@@ -140,22 +140,13 @@ class Elastic(object):
             return True
         return False
 
-    def update_dangerous_files(self) -> NoReturn:
-        """
-        Metodo que se ejecuta en el segundo paso, busca todos las descargas que tengan un -1 he intenta actualizar a su
-        valor real
-        :return:
-        """
-        self._logger.info('Step 2: Update downloaded files')
-
-        res = self._es.search(body=querys_elastic.json_search_dangerous_unused)
-        self._logger.info(f"Got {res['hits']['total']} files")
-
-        for hit in res['hits']['hits']:
+    def process_hits_update_dangerous_files(self, hits: Dict):
+        self._logger.info(f"Got {len(hits)} files")
+        for hit in hits:
             # self._logger.info(hit['_source']['url'])
             positives = self._malware_analize_url(hit['_source']['url'])
             if positives is not None:
-                self._logger.debug(hit['_source'])
+                self._logger.debug(f"Dangerous {positives} for {hit['_source']['url']}")
                 json_update = \
                     {
                         "doc": {
@@ -164,23 +155,46 @@ class Elastic(object):
                     }
                 self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=json_update)
 
-    def create_json_downloads_pending(self, just_download: bool) -> NoReturn:
+    def update_dangerous_files(self) -> NoReturn:
         """
-        Metodo que se llama con el metodo update, busca todos los comandos wget y curl que no tienen asociada una
-        descarga y crea un json con su informmacion, dangerous y hash se intentan calcular de la bd local, sino se
-        tiene almacenada se tendra que obtener despues, despues inserta el json en elastic
+        Metodo que se ejecuta en el segundo paso, busca todos las descargas que tengan un -1 he intenta actualizar a su
+        valor real
         :return:
         """
-        self._logger.info('Step 1: search wget/curl files')
+        self._logger.info('Step 2: Update downloaded files')
 
-        response = self._es.search(body=querys_elastic.json_search_wgets)
-        self._logger.info(f"Got {len(response['hits']['hits'])} files")
+        response = self._es.search(body=querys_elastic.json_search_dangerous_unused, scroll='2m')
 
-        # print(json.dumps(response))
-        # json_insert = list()
-        count_lines = len(response['hits']['hits'])
+        # fuente https://gist.github.com/hmldd/44d12d3a61a8d8077a3091c4ff7b9307
+        # Get the scroll ID
+        sid = response['_scroll_id']
+        scroll_size = len(response['hits']['hits'])
+        # Before scroll, process current batch of hits
+        self.process_hits_update_dangerous_files(response['hits']['hits'])
+
+        while scroll_size > 0:
+            "Scrolling..."
+            response = self._es.scroll(scroll_id=sid, scroll='2m')
+            # Process current batch of hits
+            self.process_hits_update_dangerous_files(response['hits']['hits'])
+            # Update the scroll ID
+            sid = response['_scroll_id']
+            # Get the number of results that returned in the last scroll
+            scroll_size = len(response['hits']['hits'])
+
+    def process_hits_json_downloads_pending(self, hits: Dict, just_download: bool):
+        """
+        Metodo que para cada bloque de 1000 conexiones comprueba si cada una de los comandos wget tiene asociaco una
+        descarga
+        :param hits:
+        :param just_download:
+        :return:
+        """
+
+        count_lines = len(hits)
         count_progress = 1
-        for hit in response['hits']['hits']:
+        self._logger.info(f"Got {len(hits)} files")
+        for hit in hits:
             self._logger.debug(f'{count_progress}/{count_lines}')
             count_progress += 1
             # print(hit['_source']['input']) # imprime el comando wget
@@ -195,6 +209,7 @@ class Elastic(object):
                         ]}}}
 
             response_downloads = self._es.search(index=hit['_index'], body=json_search_downloads)
+            # si no existe descarga asociada la creamos y la subimos
             if response_downloads['hits']['total'] == 0:
                 # self._logger.debug(hit['_source'])
                 # regex = r"((?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.\%]+)"
@@ -206,9 +221,40 @@ class Elastic(object):
                     entry = self._create_json_donwload(hit['_source']['session'], hit['_source']['timestamp'], url,
                                                        just_download)
                     if entry is not None:
-                        functions.write_file('{}\n'.format(entry), 'downloads.json', 'a')
+                        # functions.write_file('{}\n'.format(entry), 'downloads.json', 'a')
                         print(entry)
                         self._es.index(index=hit['_index'], doc_type=self._doc_type, body=entry)
+
+    def create_json_downloads_pending(self, just_download: bool) -> NoReturn:
+        """
+        Metodo que se llama con el metodo update, busca todos los comandos wget y curl que no tienen asociada una
+        descarga y crea un json con su informmacion, dangerous y hash se intentan calcular de la bd local, sino se
+        tiene almacenada se tendra que obtener despues, despues inserta el json en elastic
+        :return:
+        """
+        if just_download:
+            self._logger.info('Step 1.1: search wget/curl files and download')
+        else:
+            self._logger.info('Step 1.2: search wget/curl files and analize')
+
+        response = self._es.search(body=querys_elastic.json_search_wgets, scroll='2m')
+
+        # fuente https://gist.github.com/hmldd/44d12d3a61a8d8077a3091c4ff7b9307
+        # Get the scroll ID
+        sid = response['_scroll_id']
+        scroll_size = len(response['hits']['hits'])
+        # Before scroll, process current batch of hits
+        self.process_hits_json_downloads_pending(response['hits']['hits'], just_download)
+
+        while scroll_size > 0:
+            "Scrolling..."
+            response = self._es.scroll(scroll_id=sid, scroll='2m')
+            # Process current batch of hits
+            self.process_hits_json_downloads_pending(response['hits']['hits'], just_download)
+            # Update the scroll ID
+            sid = response['_scroll_id']
+            # Get the number of results that returned in the last scroll
+            scroll_size = len(response['hits']['hits'])
 
     def _create_json_donwload(self, session: str, timestamp: str, url: str, just_download: bool) \
             -> Union[Dict[str, str], None]:
@@ -263,8 +309,11 @@ class Elastic(object):
         try:
             r = requests.get(url, headers=headers)
             resp = json.loads(r.text)
-            if len(resp) == 0:  # fichero offline pero almacenado en la bd
+            if len(resp) <= 2:  # fichero offline pero almacenado en la bd
                 return None
+            elif 'error' in resp.keys():
+                return None
+            self._logger.warning(resp)
             if r.status_code == HTTPStatus.OK and resp['results']['response_code'] == 1:
                 return resp['results']['positives']
             return None
@@ -285,17 +334,8 @@ class Elastic(object):
 
         try:
             r = requests.post(url, data=myjson, headers=headers)
-            # print(r.text)
-            respon = json.loads(r.text)
-            if len(respon) == 0:  # fichero offline pero almacenado en la bd
-                return None
-            # si es correcto pero no tiene result es porque es un json con permalink
-            if r.status_code == HTTPStatus.OK and respon['results']['response_code'] == 1 and \
-                    'positives' in respon['results']:
-                return respon['results']['positives']
-            elif r.status_code == HTTPStatus.OK and respon['results']['response_code'] == 0:
-                return -1  # ese hash es desconocido para vt
-            return None
+            resp = json.loads(r.text)
+            return Elastic.get_dangerous_json(resp, r.status_code)
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido comprobar la url")  # fixme traducir
             return None
@@ -314,13 +354,17 @@ class Elastic(object):
             r = requests.post(url, data=myjson, headers=headers)
             if r.status_code == HTTPStatus.PARTIAL_CONTENT:  # descarga en proceso
                 return None
+
             resp = json.loads(r.text)
-            if len(resp) == 0:  # fichero offline pero almacenado en la bd
+            try:
+                if 'error' in resp.keys():
+                    return None
+                elif r.status_code == HTTPStatus.OK and resp['results']['response_code'] == 1:
+                    print(resp)
+                    return resp['results']['positives']
+                return "-1"
+            except KeyError:
                 return None
-            elif r.status_code == HTTPStatus.OK and resp['results']['response_code'] == 1:
-                print(resp)
-                return resp['results']['positives']
-            return "-1"
         except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
             self._logger.warning("No se ha podido descargar para %s", url_download)  # fixme traducir
             return None
@@ -347,18 +391,25 @@ class Elastic(object):
             self._logger.warning("No se ha podido obtener el hash para %s", url_download)  # fixme traducir
             return None
 
-    def update_dangerous_downloads_novalid(self):
-        res = self._es.search(body=querys_elastic.json_search_url_offline)
-        self._logger.info("Gots {} files".format(res['hits']['total']))
-        for hit in res['hits']['hits']:
-            self._logger.debug(hit['_source'])
-            json_update = \
-                {
-                    "doc": {
-                        "dangerous": -2
-                    }
-                }
-            self._es.update(index=hit['_index'], doc_type=hit['_type'], id=hit['_id'], body=json_update)
+    @staticmethod
+    def get_dangerous_json(data: Dict, status_code: int):
+        try:
+            if 'error' in data.keys():
+                return None
+            # print(len(data))
+            # print('error' in data.keys())
+            # print('')
+            # print(data)
+            # si es correcto pero no tiene result es porque es un json con permalink
+            if status_code == HTTPStatus.OK and data['results']['response_code'] == 1 and \
+                    'positives' in data['results']:
+                return data['results']['positives']
+            elif status_code == HTTPStatus.OK and data['results']['response_code'] == 0:
+                return -1  # ese hash es desconocido para vt
+            return None
+        except KeyError:
+            print(data)
+            return None
 
 
 def create_arg() -> argparse:
@@ -405,13 +456,12 @@ if __name__ == '__main__':
 
     if arg.update:
         # Paso 1 crear json descargas y obtener el hash de cada uno
-        e.create_json_downloads_pending(just_download=True)  # creo json de wget y curl que no existan
-        e.create_json_downloads_pending(just_download=False)  # creo json de wget y curl que no existan
+        # e.create_json_downloads_pending(just_download=True)  # creo json de wget y curl que no existan
+        # e.create_json_downloads_pending(just_download=False)  # creo json de wget y curl que no existan
 
         # Paso 2 obtener la peligrodisdad de cada hash
         e.update_dangerous_files()
-        # no usado
-        # e.update_dangerous_downloads_novalid()
+
     else:
         if arg.file is None:
             logger.critical("The following arguments are required: -f/--file")
