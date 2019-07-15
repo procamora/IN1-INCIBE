@@ -13,8 +13,8 @@ import geoip2.database
 from connectionAux import ConnectionAux
 from download import Download
 from newConnection import NewConnection
-from utils.functions import parserIp, getSession, parserDateTime, parserIdtoSession, parserIdIp, writeFile, \
-    parserIpAnyLine, checkDir
+from utils.functions import parser_ip, get_session, parser_date_time, parser_id_to_session, parser_id_ip, write_file, \
+    parser_ip_any_line, check_dir
 
 
 class Parser(object):
@@ -34,7 +34,7 @@ class Parser(object):
         config.sections()
         config.read('settings.conf')
 
-        checkDir(output)
+        check_dir(output)
 
         self._logger = logger
         self._logCompleted = '{}/{}'.format(output, config[myConfig]['FILE_LOG_COMPLETED'])
@@ -72,7 +72,7 @@ class Parser(object):
             self._connectionWget.clear()  # Vaciamos la lista/diccionario porque no tiene informacion util en otro log
             self._listCommandWget.clear()
 
-            start = timer()
+            # start = timer()
             try:
                 connectionAuxDict = Parser.getConnections(fname)
                 newConnectionDict = self.setIPtoID(connectionAuxDict, fname)
@@ -80,7 +80,7 @@ class Parser(object):
             except UnicodeDecodeError as error:
                 self._logger.error('Unicode decode error in file: {}'.format(fname))
                 self._logger.debug(traceback.print_tb(error.__traceback__))
-            end = timer()
+            # end = timer()
             # self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
 
         endTotal = timer()
@@ -101,7 +101,7 @@ class Parser(object):
                 # evitamos errores por lineas en blanco
                 if re.match(r'.*New connection:.*', line, re.IGNORECASE) and \
                         re.match(r'.*session: (\w+).*', line, re.IGNORECASE):
-                    connectionAux = ConnectionAux(parserIp(line), getSession(line), parserDateTime(line))
+                    connectionAux = ConnectionAux(parser_ip(line), get_session(line), parser_date_time(line))
                     connectionAuxDict[numLine + 1] = connectionAux  # Linea en la que estara la _ip con el id
 
         return connectionAuxDict
@@ -145,7 +145,7 @@ class Parser(object):
                     valid = False
 
             if valid:
-                connectionAuxDict[connection].setId(parserIdtoSession(s))  # Establecemos el id de la conexion
+                connectionAuxDict[connection].setId(parser_id_to_session(s))  # Establecemos el id de la conexion
                 if connectionAuxDict[connection].getId() in newConnectionDict:
                     pass  # Posteriores conexiones con la misma id,ip los omitimos porque iran al objeto ya creado
                 else:
@@ -166,15 +166,15 @@ class Parser(object):
 
         with open(fname, 'r') as fp:
             for line in fp:
-                info = parserIdIp(line)
+                info = parser_id_ip(line)
                 if info is not None:
                     if info in newConnectionDict:  # Las lineas que tenemos en el diccionario las parseamos
                         newConnectionDict[info].addLine(line)
                         if re.match(r'.*CMD:.*wget.*', line, re.IGNORECASE):
                             self._connectionWget.append(info)  # si la linea contiene un wget guardo esa conexion
                     else:  # Lineas con id,ip pero que no tienen New connection y no estan en el diccionario
-                        conAux = ConnectionAux(parserIpAnyLine(line), '', '')
-                        conAux.setId(parserIdtoSession(line))
+                        conAux = ConnectionAux(parser_ip_any_line(line), '', '')
+                        conAux.setId(parser_id_to_session(line))
                         newConnectionDict[info] = NewConnection(conAux, self._logger, self._geoip2DB)
                         newConnectionDict[info].addLine(line)
                 else:  # Lineas que no tienen id,ip
@@ -184,18 +184,18 @@ class Parser(object):
                         regex = r'^.*Downloaded URL \(b?\'(.*)\'\) with SHA-\d+ (\w+) to (.*)$'
                         if re.match(regex, line, re.IGNORECASE):
                             d = re.search(regex, line, re.IGNORECASE)
-                            download = Download(d.group(1), d.group(2), d.group(3), parserDateTime(line))
+                            download = Download(d.group(1), d.group(2), d.group(3), parser_date_time(line))
                             self._listCommandWget.append(download)
 
         self.updateCommandConnection(newConnectionDict)
 
         for conect in newConnectionDict.values():
             if conect.isCompleted():
-                writeFile(conect.getJSON(), self._logCompleted, 'a')
+                write_file(conect.getJSON(), self._logCompleted, 'a')
             elif conect.isSession():
-                writeFile(conect.getJSON(), self._logAuxSession, 'a')
+                write_file(conect.getJSON(), self._logAuxSession, 'a')
             else:
-                writeFile(conect.getJSON(), self._logAuxNoSession, 'a')
+                write_file(conect.getJSON(), self._logAuxNoSession, 'a')
 
     def searchWget(self, newConnectionDict, command) -> NoReturn:
         """

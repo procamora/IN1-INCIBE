@@ -1,32 +1,31 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 import os
 import re
-from builtins import bool
-from http import HTTPStatus  # https://docs.python.org/3/library/http.html
+import subprocess
 from typing import Union, NoReturn
 
 import colorlog  # https://medium.com/@galea/python-logging-example-with-color-formatting-file-handlers-6ee21d363184
 import requests
-from filehash import FileHash
 
 requests.packages.urllib3.disable_warnings()
 
 
-def getLogger(verbose, name='Parser') -> colorlog:
+def get_logger(verbose: bool, name: str = 'Parser') -> colorlog:
     # Desabilita log de modulos
     # for _ in ("boto", "elasticsearch", "urllib3"):
     #    logging.getLogger(_).setLevel(logging.CRITICAL)
 
-    logFormat = '%(levelname)s - %(module)s - %(message)s'
+    log_format = '%(levelname)s - %(module)s - %(message)s'
 
     bold_seq = '\033[1m'
     colorlog_format = (
         f'{bold_seq} '
         '%(log_color)s '
-        f'{logFormat}'
+        f'{log_format}'
     )
 
     colorlog.basicConfig(format=colorlog_format)
@@ -41,7 +40,7 @@ def getLogger(verbose, name='Parser') -> colorlog:
     return log
 
 
-def parserDateTime(line) -> str:
+def parser_date_time(line: str) -> str:
     """
     Metodo para obtener la fecha y hora de cualquier linea, si hay una T como separador entre la fecha y la hora ls
     sustituyo por un espacio en blanco y retorno solo la fecha hora, quitando las fracciones de segungo y zona horaria
@@ -50,12 +49,12 @@ def parserDateTime(line) -> str:
     :param line:
     :return:
     """
-    regexDatetime = r'\d{4}-\d{2}-\d{2}(T| )\d{2}:\d{2}:\d{2}\.\d+(\+\d+|\w)'
-    datetime = re.search(regexDatetime, line).group(0)
+    regex_datetime = r'\d{4}-\d{2}-\d{2}(T| )\d{2}:\d{2}:\d{2}\.\d+(\+\d+|\w)'
+    datetime = re.search(regex_datetime, line).group(0)
     return datetime.replace('T', ' ').split('.')[0]
 
 
-def getSession(line) -> str:
+def get_session(line) -> str:
     """
     Metodo para obtener la sesion. Esta unicamente en la linea New connection
 
@@ -66,7 +65,7 @@ def getSession(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIp(line) -> str:
+def parser_ip(line) -> str:
     """
     Metodo para obtener la ip. funciona unicamente en la linea New connection
 
@@ -77,7 +76,7 @@ def parserIp(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIpAnyLine(line) -> str:
+def parser_ip_any_line(line) -> str:
     """
     Metodo para obtener la ip de cualquier linea
 
@@ -88,7 +87,7 @@ def parserIpAnyLine(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIdtoSession(line) -> str:
+def parser_id_to_session(line) -> str:
     """
     Metodo para obtener el id de una conexion, este id junto a la ip identifican los log de una sesion
 
@@ -99,7 +98,7 @@ def parserIdtoSession(line) -> str:
     return re.search(regex, line).group(1)
 
 
-def parserIdIp(line) -> Union[str, None]:
+def parser_id_ip(line) -> Union[str, None]:
     """
     Metodo para obtener el id y la ip de una conexion
 
@@ -113,7 +112,7 @@ def parserIdIp(line) -> Union[str, None]:
     return None
 
 
-def writeFile(text, fout, mode) -> NoReturn:
+def write_file(text: str, fout: str, mode: str) -> NoReturn:
     """
     Metodo para escribir todos los INSERT INTO en un fichero
 
@@ -126,7 +125,7 @@ def writeFile(text, fout, mode) -> NoReturn:
         fp.write(text)
 
 
-def checkDir(directory) -> NoReturn:
+def check_dir(directory: str) -> NoReturn:
     """
     Metodo que comprueeba si existe un directorio, si no existe lo crea
     :param directory:
@@ -136,43 +135,42 @@ def checkDir(directory) -> NoReturn:
         os.mkdir(directory)
 
 
-def is_downloadable(url) -> bool:
-    """
-    Does the url contain a downloadable resource
-    """
+def get_number_lines_file(file: str, loggers: logging) -> int:
     try:
-        h = requests.head(url, allow_redirects=True, verify=False, timeout=5)
-        header = h.headers
-        content_type = header.get('content-type')
-        # if 'text' in content_type.lower():
-        #    return False
-        if content_type is not None and 'html' in content_type.lower():
-            return False
-        return True
+        command = f'wc -l {file} | cut -d " " -f1'
+        execute = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = execute.communicate()
+        count_lines = int(stdout)
+        print(count_lines)
+        return count_lines
     except Exception as e:
-        # l = getLogger(False)
-        print('not is_downloadable: {}'.format(url))
-        return False
+        loggers.warning(e)
+        loggers.warning('Method readlines')
+        with open(file, 'r') as fp:
+            count_lines = len(fp.readlines())
+        return count_lines
 
 
-def get_shasum(file_url) -> Union[str, None]:
-    # Si no tiene http:// requests falla al descargar
-    if not re.search('http://', file_url):
-        file_url = 'http://{}'.format(file_url)
-
-    if is_downloadable(file_url):
-        file_name = file_url.split('/')[-1]
-        r = requests.get(file_url, verify=False, timeout=5)
-        if r.status_code == HTTPStatus.OK:
-            # Copiamos los ficheros por bloques
-            with open(file_name, 'wb') as pdf:
-                for chunk in r.iter_content(chunk_size=1024):
-                    if chunk:
-                        pdf.write(chunk)
-
-            md5hasher = FileHash('sha256')
-            newHash = md5hasher.hash_file("./{}".format(file_name))
-            # os.remove(file_name)  # FIXME DESCOMENTAR
-            return newHash
-        return None
-    return None
+def malware_get_reputation_ip(ip: str, loggers: logging) -> int:
+    """
+    Metodo para reguntar por la reputacion de una ip, te devuelve el numero de ataques que se han recibido de esa ip
+    o -2 en caso de no recibir ninguno y -1 si falla la precion
+    :param ip:
+    :param loggers:
+    :return:
+    """
+    URL = "http://127.0.0.1:8080"
+    url = f'{URL}/getReputationIp?ip={ip}'
+    headers = {'Accept': 'application/json'}
+    try:
+        r = requests.get(url, headers=headers, timeout=5)
+        if r.status_code == 200:
+            # try:
+            return json.loads(r.text)['reputation']
+        # except json.decoder.JSONDecodeError:
+        else:
+            return -1
+    except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout):
+        # print(f"No se ha podido comprobar la reputacion para {ip}")  # no se tiene acceso a logger
+        loggers.warning(f"No se ha podido comprobar la reputacion para {ip}")  # fixme traducir
+        return -1

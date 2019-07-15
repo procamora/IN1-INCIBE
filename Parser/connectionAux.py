@@ -38,7 +38,7 @@ class ConnectionAux(object):
         """
         return "{},{}".format(self._pid, self._ip)
 
-    def setId(self, pid) -> str:
+    def setId(self, pid) -> NoReturn:
         """
         Metodo para establecer el id de la conexion
 
