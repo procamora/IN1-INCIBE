@@ -40,3 +40,19 @@ class ThreatLevel(object):
                 return 2
 
         return 3
+
+    def get_threat_level_1(self, list_inputs) -> int:
+        if len(list_inputs) == 0:
+            return 4
+
+        for commands in list_inputs:
+            command = commands.split(' ')[0]  # Obtenemos solo el comando
+            if command in self._LEVEL_1:
+                return 1
+
+        for commands in list_inputs:
+            command = commands.split(' ')[0]  # Obtenemos solo el comando
+            if command in self._LEVEL_2:
+                return 2
+
+        return 3

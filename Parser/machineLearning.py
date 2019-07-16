@@ -31,11 +31,12 @@ from sklearn.linear_model import SGDClassifier
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
 
-#from threatLevel import ThreatLevel
+from threatLevel import ThreatLevel
 #from functions import getLogger
 
 import requests
 from elasticsearch import Elasticsearch
+from typing import NoReturn, Dict
 
 class MachineLearning(object):
 
@@ -43,13 +44,106 @@ class MachineLearning(object):
         #self._logger = logger
         self._doc_type = 'object'  # object y nested
         self._URL = "http://127.0.0.1:8080"
+        self._size = 1
 
-    def request_objets_elastichsearch(self) -> NoReturn:
+    def request_objets_elastichsearch(self,workingDir) -> NoReturn:
 
         es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
-        res= es.search(index="output-scriptzteam", body={"query": {"match": {'session':'7d853b3b'}}})
+        data = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={"query": {"exists" : { "field" : "input" }}})
         #res=es.get(index='output-scriptzteam',doc_type=self._doc_type,id=215059)
-        print(res)
+        #print(res)
+
+        # Get the scroll ID
+        sid = data['_scroll_id']
+        scroll_size = len(data['hits']['hits'])
+
+        # Before scroll, process current batch of hits
+        arrayJSON = []
+        self.process_hits(data['hits']['hits'],arrayJSON)
+
+        scroll_size = 20
+        while scroll_size > 0:
+            "Scrolling..."
+            data = es.scroll(scroll_id=sid, scroll='2m')
+
+            # Process current batch of hits
+            all_data = self.process_hits(data['hits']['hits'],arrayJSON)
+
+            # Update the scroll ID
+            sid = data['_scroll_id']
+
+            # Get the number of results that returned in the last scroll
+            #scroll_size = len(data['hits']['hits'])
+            scroll_size -=1
+
+        self.calculate_ThreatLevel(arrayJSON,workingDir)
+
+    def process_hits(self, hits: Dict, arrayJSON):
+        """
+        Metodo encargado de obtener para cada session de ElasticSearch todos los comando almacenados.
+        Cada session es almacenada en un diccionario, siendo la clave la session y el valor los comando introducidos.
+        :param hits:
+        :param arrayJSON:
+        :return arrayJSON:
+        """
+
+        for hit in hits:
+            session = hit['_source']['session']
+            if len(arrayJSON) > 0:
+                #Variable para controlar la insercción de una session nueva
+                insert = False
+                for i in range(0, len(arrayJSON)):
+                    if session in arrayJSON[i]:
+                        arrayJSON[i][session].append(hit['_source']['input'])
+                        insert = True
+                        break
+                if not insert:
+                    inputs = []
+                    inputs.append(hit['_source']['input'])
+                    newJSON = {session : inputs}
+                    arrayJSON.append(newJSON)
+
+            else:
+                inputs = []
+                inputs.append(hit['_source']['input'])
+                newJSON = {session : inputs}
+                arrayJSON.append(newJSON)
+
+        return arrayJSON
+
+    def calculate_ThreatLevel(self,arrayJSON,workingDir):
+        """
+        A partir de la lista de comando de cada session se calcula el nivel de amenaza.
+        :param arrayJSON:
+        :return:
+        """
+        label_dict = {}
+        data = []
+        for i in range(0, len(arrayJSON)):
+            for key in arrayJSON[i]:
+                list_commands = []
+                #Doble bucle por tenemos un array dentro de otro
+                for values in arrayJSON[i].values():
+                    for command in values:
+                        list_commands.append(command)
+                threatLevel = ThreatLevel()
+                newJSON = {
+                    'IdSession' : key,
+                    'threatLevel': threatLevel.get_threat_level_1(list_commands),
+                    'listInputs' : arrayJSON[i].get(key)
+                }
+                data.append(newJSON)
+
+        #print(data)
+
+        self.createFileCSV(workingDir,"all_data",data,label_dict)
+
+        #import csv files from folder
+        combined_csv = pd.concat([pd.read_csv(workingDir+f) for f in os.listdir(workingDir) if(f.find(".csv")>0)]).set_index('IdSession')
+        #combined_csv.to_csv(workingDir+"combined_csv.csv",index=False)
+
+        #Dividimos todos los datos en train y evaluation
+        self.separate_train_evaluatio(workingDir,combined_csv)
 
     def getJSON(self,fileJSON):
         """
@@ -138,7 +232,7 @@ class MachineLearning(object):
         F_instalacion_compilacion_programas = ['apt-get', 'apt', 'yum', 'dnf', 'if', 'while', 'do', 'tar', 'gcc',
                                                'make','chmod', 'bzip2', 'chown']
 
-        F_ejecucion_programas = ['nohup','sudo','python','perl','sh','bash','busybox','exec']
+        F_ejecucion_programas = ['nohup','sudo','python','perl','bash','busybox','exec']
 
         F_matar_suspender_procesos = ['kill', 'killall', 'pkill',
                                       'poweroff','reboot','halt','reSuSEfirewall', 'SuSEfirewall','sleep']
@@ -155,8 +249,8 @@ class MachineLearning(object):
                 current_vector[0] = i["IdSession"]
                 for j in range(0,len(i["listInputs"])):
                     #file.writerow([i["IdSession"],i["listInputs"][j]["input"]])
-                    if (i["listInputs"][j]["input"]!=''):
-                        current_command = i["listInputs"][j]["input"]
+                    if (i["listInputs"][j]!=''):
+                        current_command = i["listInputs"][j]
                         #Comprobamos si el comando está dentro de cada feature
                         if any(substring in current_command for substring in F_leer_disco):
                             current_vector[1] = 1
@@ -171,13 +265,14 @@ class MachineLearning(object):
                         #if any(substring in current_command for substring in F_compilacion_programas):
                         #current_vector[5] = 1
                         if any(substring in current_command for substring in F_ejecucion_programas):
+                            print(current_command)
                             current_vector[5] = 1
                         if any(substring in current_command for substring in F_matar_suspender_procesos):
                             current_vector[6] = 1
                         if any(substring in current_command for substring in F_obtencion_informacion):
                             current_vector[7] = 1
                         # Si no ha hecho matching con ninguna lista lo ponemos como obtencion de informacion
-                    if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0] and i["listInputs"][j]["input"]!='':
+                    if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0] and i["listInputs"][j]!='':
                         current_vector[7] = 1
                 #Añadimos las etiquetas de cada IdSession a un diccionario
                 if i["threatLevel"] != '':
@@ -1295,7 +1390,7 @@ if __name__ == "__main__":
     if arg.dir is not None:
         start = timer()
 
-        ml.request_objets_elastichsearch()
+        ml.request_objets_elastichsearch(arg.dir)
         #ml.JSONToCSV(arg.dir)
         #ml.clasificador(arg.dir)
         #ml.onehotEncoding(arg.dir)
