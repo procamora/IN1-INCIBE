@@ -229,10 +229,10 @@ class MachineLearning(object):
 
         F_conexiones_internet = ['wget', 'ssh', 'tftp', 'tftpd','scp','nc','curl','ftpget']
 
-        F_instalacion_compilacion_programas = ['apt-get', 'apt', 'yum', 'dnf', 'if', 'while', 'do', 'tar', 'gcc',
-                                               'make','chmod', 'bzip2', 'chown']
+        F_instalacion_compilacion_programas = ['apt-get', 'apt', 'yum', 'dnf', 'if', 'while', 'do', 'else','done',
+                                               'tar', 'gcc', 'make','chmod', 'bzip2', 'chown']
 
-        F_ejecucion_programas = ['nohup','sudo','python','perl','bash','busybox','exec']
+        F_ejecucion_programas = ['nohup','sudo','python','perl','sh','bash','busybox','exec']
 
         F_matar_suspender_procesos = ['kill', 'killall', 'pkill',
                                       'poweroff','reboot','halt','reSuSEfirewall', 'SuSEfirewall','sleep']
@@ -247,29 +247,38 @@ class MachineLearning(object):
             if len(i["listInputs"]) > 0:
                 current_vector = [0,0,0,0,0,0,0,0,0]
                 current_vector[0] = i["IdSession"]
+                print("Nueva session: ",current_vector[0])
+                print(i["listInputs"])
                 for j in range(0,len(i["listInputs"])):
                     #file.writerow([i["IdSession"],i["listInputs"][j]["input"]])
                     if (i["listInputs"][j]!=''):
-                        current_command = i["listInputs"][j]
+                        current_command = i["listInputs"][j].split(' ')[0]
                         #Comprobamos si el comando está dentro de cada feature
-                        if any(substring in current_command for substring in F_leer_disco):
+                        if current_command in F_leer_disco:
+                            print('Leer Disco: ',current_command)
                             current_vector[1] = 1
-                        if any(substring in current_command for substring in F_escribir_disco):
+                        if current_command in F_escribir_disco:
+                            print('Escribir Disco: ',current_command)
                             current_vector[2] = 1
                         if current_vector == 'history -c' or current_vector == 'history -d':
+                            print('Escribir Disco: ',current_command)
                             current_vector[2] = 1
-                        if any(substring in current_command for substring in F_conexiones_internet):
+                        if current_command in F_conexiones_internet:
+                            print('Conexion Int.: ',current_command)
                             current_vector[3] = 1
-                        if any(substring in current_command for substring in F_instalacion_compilacion_programas):
+                        if current_command in F_instalacion_compilacion_programas:
+                            print('Install and make: ',current_command)
                             current_vector[4] = 1
                         #if any(substring in current_command for substring in F_compilacion_programas):
                         #current_vector[5] = 1
                         if any(substring in current_command for substring in F_ejecucion_programas):
-                            print(current_command)
+                            print('Ejecucion: ',current_command)
                             current_vector[5] = 1
-                        if any(substring in current_command for substring in F_matar_suspender_procesos):
+                        if current_command in F_matar_suspender_procesos:
+                            print('Suspender: ',current_command)
                             current_vector[6] = 1
-                        if any(substring in current_command for substring in F_obtencion_informacion):
+                        if current_command in F_obtencion_informacion:
+                            print('Info: ',current_command)
                             current_vector[7] = 1
                         # Si no ha hecho matching con ninguna lista lo ponemos como obtencion de informacion
                     if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0] and i["listInputs"][j]!='':
