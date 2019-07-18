@@ -44,7 +44,7 @@ class MachineLearning(object):
         #self._logger = logger
         self._doc_type = 'object'  # object y nested
         self._URL = "http://127.0.0.1:8080"
-        self._size = 1
+        self._size = 1000
 
     def request_objets_elastichsearch(self,workingDir) -> NoReturn:
 
@@ -61,7 +61,6 @@ class MachineLearning(object):
         arrayJSON = []
         self.process_hits(data['hits']['hits'],arrayJSON)
 
-        scroll_size = 20
         while scroll_size > 0:
             "Scrolling..."
             data = es.scroll(scroll_id=sid, scroll='2m')
@@ -73,9 +72,9 @@ class MachineLearning(object):
             sid = data['_scroll_id']
 
             # Get the number of results that returned in the last scroll
-            #scroll_size = len(data['hits']['hits'])
-            scroll_size -=1
+            scroll_size = len(data['hits']['hits'])
 
+        #Generacion del TL y ficheros CSVs
         self.calculate_ThreatLevel(arrayJSON,workingDir)
 
     def process_hits(self, hits: Dict, arrayJSON):
@@ -114,6 +113,7 @@ class MachineLearning(object):
     def calculate_ThreatLevel(self,arrayJSON,workingDir):
         """
         A partir de la lista de comando de cada session se calcula el nivel de amenaza.
+        Además se generan los ficheros CSVs para train y test
         :param arrayJSON:
         :return:
         """
@@ -134,13 +134,12 @@ class MachineLearning(object):
                 }
                 data.append(newJSON)
 
-        #print(data)
+
 
         self.createFileCSV(workingDir,"all_data",data,label_dict)
 
         #import csv files from folder
         combined_csv = pd.concat([pd.read_csv(workingDir+f) for f in os.listdir(workingDir) if(f.find(".csv")>0)]).set_index('IdSession')
-        #combined_csv.to_csv(workingDir+"combined_csv.csv",index=False)
 
         #Dividimos todos los datos en train y evaluation
         self.separate_train_evaluatio(workingDir,combined_csv)
@@ -247,38 +246,38 @@ class MachineLearning(object):
             if len(i["listInputs"]) > 0:
                 current_vector = [0,0,0,0,0,0,0,0,0]
                 current_vector[0] = i["IdSession"]
-                print("Nueva session: ",current_vector[0])
-                print(i["listInputs"])
+                #print("Nueva session: ",current_vector[0])
+                #print(i["listInputs"])
                 for j in range(0,len(i["listInputs"])):
                     #file.writerow([i["IdSession"],i["listInputs"][j]["input"]])
                     if (i["listInputs"][j]!=''):
                         current_command = i["listInputs"][j].split(' ')[0]
                         #Comprobamos si el comando está dentro de cada feature
                         if current_command in F_leer_disco:
-                            print('Leer Disco: ',current_command)
+                            #print('Leer Disco: ',current_command)
                             current_vector[1] = 1
                         if current_command in F_escribir_disco:
-                            print('Escribir Disco: ',current_command)
+                            #print('Escribir Disco: ',current_command)
                             current_vector[2] = 1
                         if current_vector == 'history -c' or current_vector == 'history -d':
-                            print('Escribir Disco: ',current_command)
+                            #print('Escribir Disco: ',current_command)
                             current_vector[2] = 1
                         if current_command in F_conexiones_internet:
-                            print('Conexion Int.: ',current_command)
+                            #print('Conexion Int.: ',current_command)
                             current_vector[3] = 1
                         if current_command in F_instalacion_compilacion_programas:
-                            print('Install and make: ',current_command)
+                            #print('Install and make: ',current_command)
                             current_vector[4] = 1
                         #if any(substring in current_command for substring in F_compilacion_programas):
                         #current_vector[5] = 1
-                        if any(substring in current_command for substring in F_ejecucion_programas):
-                            print('Ejecucion: ',current_command)
+                        if current_command in F_ejecucion_programas:
+                            #print('Ejecucion: ',current_command)
                             current_vector[5] = 1
                         if current_command in F_matar_suspender_procesos:
-                            print('Suspender: ',current_command)
+                            #print('Suspender: ',current_command)
                             current_vector[6] = 1
                         if current_command in F_obtencion_informacion:
-                            print('Info: ',current_command)
+                            #print('Info: ',current_command)
                             current_vector[7] = 1
                         # Si no ha hecho matching con ninguna lista lo ponemos como obtencion de informacion
                     if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0] and i["listInputs"][j]!='':
@@ -1399,9 +1398,9 @@ if __name__ == "__main__":
     if arg.dir is not None:
         start = timer()
 
-        ml.request_objets_elastichsearch(arg.dir)
+        #ml.request_objets_elastichsearch(arg.dir)
         #ml.JSONToCSV(arg.dir)
-        #ml.clasificador(arg.dir)
+        ml.clasificador(arg.dir)
         #ml.onehotEncoding(arg.dir)
         """
         Saber el número de cluster para modificar parametros de la funcion clustering y draw_kmeans
