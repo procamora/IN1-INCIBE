@@ -335,7 +335,8 @@ class MachineLearning(object):
     def separate_train_evaluatio(self, workingDir, df) -> NoReturn:
 
         #Dividimos el dataset en entrenamiento y evaluacion para poder hacer clasificacion
-        X_train, X_evaluation = train_test_split(df, test_size = 0.20)
+        labels = df["threatLevel"]
+        X_train, X_evaluation = train_test_split(df, test_size = 0.20,stratify=labels)
 
         X_train.to_csv(workingDir+"train_data.csv")
         X_evaluation.to_csv(workingDir+"evaluation_data.csv")
@@ -773,15 +774,19 @@ class MachineLearning(object):
     def calculate_precision_recall_AUC(self, workingDir) -> NoReturn:
 
         #Obtenemos los datos de evaluacion etiquetados
-        #labeled_evaluation = pd.read_csv(workingDir+"evaluation_data.csv",index_col=0)
-        #y_evaluation=labeled_evaluation["threatLevel"]
-        #X_evaluation=labeled_evaluation.drop('threatLevel',axis=1)
+        labeled_evaluation = pd.read_csv(workingDir+"evaluation_data.csv",index_col=0)
+        y_evaluation=labeled_evaluation["threatLevel"]
+        X_evaluation=labeled_evaluation.drop('threatLevel',axis=1)
+        y_evaluation = label_binarize(y_evaluation,classes=[1, 2, 3])
 
         #Obtenemos los datos de entrenamiento etiquetados
-        #train = pd.read_csv(workingDir+"train_data.csv",index_col=0)
+        train = pd.read_csv(workingDir+"train_data.csv",index_col=0)
         #Eliminamos la columna vacia Unnamed introducida de forma automatica al no tener indice
-        #y_train=train["threatLevel"]
-        #X_train = train.drop('threatLevel',axis=1)
+        y_train=train["threatLevel"]
+        X_train = train.drop('threatLevel',axis=1)
+        y_train = label_binarize(y_train,classes=[1, 2, 3])
+        n_classes = y_train.shape[1]
+
 
         #Entrenando el algoritmo SVM -> {'C': 1000, 'gamma': 0.01, 'kernel': 'rbf'}
         #svclassifier = OneVsRestClassifier(SVC(kernel='rbf',C=1000,gamma=0.01))
@@ -794,47 +799,47 @@ class MachineLearning(object):
         #for i in range(0,len(y_evaluation)):
             #y_test.append(y_evaluation[i])
 
-        data = pd.read_csv(workingDir+"all_data.csv",index_col=0)
-        labels = data["threatLevel"]
-        data = data.drop('threatLevel',axis=1)
+        #data = pd.read_csv(workingDir+"all_data.csv",index_col=0)
+        #labels = data["threatLevel"]
+        #data = data.drop('threatLevel',axis=1)
 
-        Y = label_binarize(labels,classes=[1, 2, 3])
-        n_classes = Y.shape[1]
+        #Y = label_binarize(labels,classes=[1, 2, 3])
+        #n_classes = Y.shape[1]
 
-        X_train, X_test, y_train, y_test = train_test_split(data,Y)
+        #X_train, X_test, y_train, y_test = train_test_split(data,Y,test_size = 0.20,stratify=Y)
 
         clf = OneVsRestClassifier(SVC(kernel='rbf',C=1000,gamma=0.01))
         clf.fit(X_train, y_train)
 
-        y_score = clf.decision_function(X_test)
+        y_score = clf.decision_function(X_evaluation)
 
         # For each class
         precision = dict()
         recall = dict()
         average_precision = dict()
         for i in range(n_classes):
-            precision[i], recall[i], _ = precision_recall_curve(y_test[:, i],
+            precision[i], recall[i], _ = precision_recall_curve(y_evaluation[:, i],
                                                                 y_score[:, i])
-            average_precision[i] = average_precision_score(y_test[:, i], y_score[:, i])
+            average_precision[i] = average_precision_score(y_evaluation[:, i], y_score[:, i])
 
         # A "micro-average": quantifying score on all classes jointly
-        precision["micro"], recall["micro"], _ = precision_recall_curve(y_test.ravel(),
+        precision["micro"], recall["micro"], _ = precision_recall_curve(y_evaluation.ravel(),
                                                                         y_score.ravel())
-        average_precision["micro"] = average_precision_score(y_test, y_score,
+        average_precision["micro"] = average_precision_score(y_evaluation, y_score,
                                                              average="micro")
         print('Average precision score, micro-averaged over all classes: {0:0.2f}'
               .format(average_precision["micro"]))
 
-        #plt.figure()
-        #plt.step(recall['micro'], precision['micro'], color='b', alpha=0.2,where='post')
-        #plt.fill_between(recall["micro"], precision["micro"], alpha=0.2, color='b')
+        plt.figure()
+        plt.step(recall['micro'], precision['micro'], color='b', alpha=0.2,where='post')
+        plt.fill_between(recall["micro"], precision["micro"], alpha=0.2, color='b')
 
-        #plt.xlabel('Recall')
-        #plt.ylabel('Precision')
-        #plt.ylim([0.0, 1.05])
-        #plt.xlim([0.0, 1.0])
-        #plt.title('Average precision score, micro-averaged over all classes: AP={0:0.2f}'.format(average_precision["micro"]))
-        #plt.show()
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.ylim([0.0, 1.05])
+        plt.xlim([0.0, 1.0])
+        plt.title('Average precision score, micro-averaged over all classes: AP={0:0.2f}'.format(average_precision["micro"]))
+        plt.show()
 
         # setup plot details
         colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
@@ -1581,10 +1586,10 @@ if __name__ == "__main__":
     if arg.dir is not None:
         start = timer()
 
-        ml.request_objets_elastichsearch(arg.dir)
+        #ml.request_objets_elastichsearch(arg.dir)
         #ml.JSONToCSV(arg.dir)
         #ml.clasificador(arg.dir)
-        #ml.calculate_precision_recall_AUC(arg.dir)
+        ml.calculate_precision_recall_AUC(arg.dir)
         #ml.onehotEncoding(arg.dir)
         """
         Saber el número de cluster para modificar parametros de la funcion clustering y draw_kmeans
