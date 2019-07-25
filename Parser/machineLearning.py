@@ -773,10 +773,19 @@ class MachineLearning(object):
 
     def calculate_precision_recall_AUC(self, workingDir) -> NoReturn:
 
+        """
+        Calculamos la curva precision-recall, para ello es necesario binarizar los vectores
+        ya que tenemos un problema multiclases. Además, no se calcula la curva ROC porque las clases
+        no están igualmente distribuidas.
+        :param workingDir:
+        :return:
+        """
+
         #Obtenemos los datos de evaluacion etiquetados
         labeled_evaluation = pd.read_csv(workingDir+"evaluation_data.csv",index_col=0)
         y_evaluation=labeled_evaluation["threatLevel"]
         X_evaluation=labeled_evaluation.drop('threatLevel',axis=1)
+        #Binarizamos los vectores he indicamos las etiquetas que contienen
         y_evaluation = label_binarize(y_evaluation,classes=[1, 2, 3])
 
         #Obtenemos los datos de entrenamiento etiquetados
@@ -784,34 +793,16 @@ class MachineLearning(object):
         #Eliminamos la columna vacia Unnamed introducida de forma automatica al no tener indice
         y_train=train["threatLevel"]
         X_train = train.drop('threatLevel',axis=1)
+        #Binarizamos los vectores he indicamos las etiquetas que contienen
         y_train = label_binarize(y_train,classes=[1, 2, 3])
         n_classes = y_train.shape[1]
 
 
-        #Entrenando el algoritmo SVM -> {'C': 1000, 'gamma': 0.01, 'kernel': 'rbf'}
-        #svclassifier = OneVsRestClassifier(SVC(kernel='rbf',C=1000,gamma=0.01))
-        #svclassifier.fit(X_train, y_train)
-        #Hacemos la prediccion
-        #X_evaluation = evaluation
-        #y_svm_predict = svclassifier.predict(X_evaluation)
+        svclassifier = OneVsRestClassifier(SVC(kernel='rbf',C=1000,gamma=0.01))
+        svclassifier.fit(X_train, y_train)
+        y_svm_predict = svclassifier.predict(X_evaluation)
 
-        #y_test = []
-        #for i in range(0,len(y_evaluation)):
-            #y_test.append(y_evaluation[i])
-
-        #data = pd.read_csv(workingDir+"all_data.csv",index_col=0)
-        #labels = data["threatLevel"]
-        #data = data.drop('threatLevel',axis=1)
-
-        #Y = label_binarize(labels,classes=[1, 2, 3])
-        #n_classes = Y.shape[1]
-
-        #X_train, X_test, y_train, y_test = train_test_split(data,Y,test_size = 0.20,stratify=Y)
-
-        clf = OneVsRestClassifier(SVC(kernel='rbf',C=1000,gamma=0.01))
-        clf.fit(X_train, y_train)
-
-        y_score = clf.decision_function(X_evaluation)
+        y_score = svclassifier.decision_function(X_evaluation)
 
         # For each class
         precision = dict()
@@ -841,6 +832,7 @@ class MachineLearning(object):
         plt.title('Average precision score, micro-averaged over all classes: AP={0:0.2f}'.format(average_precision["micro"]))
         plt.show()
 
+        #Calculamos la curva para cada una de las clases
         # setup plot details
         colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
 
@@ -875,24 +867,22 @@ class MachineLearning(object):
         plt.ylabel('Precision')
         plt.title('Extension of Precision-Recall curve to multi-class')
         plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
-
-
         plt.show()
 
 
-        #print('Score train SVM: ',svclassifier.score(X_train,y_train))
-        #print('Score evaluation SVM: ',svclassifier.score(X_evaluation,y_evaluation))
+        print('Score train SVM: ',svclassifier.score(X_train,y_train))
+        print('Score evaluation SVM: ',svclassifier.score(X_evaluation,y_evaluation))
 
-        #precision_svm, recall_svm, fscore_svm, support_svm = precision_recall_fscore_support(y_evaluation, y_svm_predict)
+        precision_svm, recall_svm, fscore_svm, support_svm = precision_recall_fscore_support(y_evaluation, y_svm_predict)
 
-        #print('Precision por clases: ',precision_svm)
-        #print('Precision SVM: ', sum(precision_svm)/len(precision_svm))
-        #print('Recall por clases: ',recall_svm)
-        #print('Recall SVM: ', sum(recall_svm)/len(recall_svm))
-        #print('F1-score por clases: ',fscore_svm)
-        #print('F1-score SVM: ', sum(fscore_svm)/len(fscore_svm))
-        #print('Accuracy SVM: ',accuracy_score(y_evaluation, y_svm_predict))
-        #print('Support SVM: ',support_svm)
+        print('Precision por clases: ',precision_svm)
+        print('Precision SVM: ', sum(precision_svm)/len(precision_svm))
+        print('Recall por clases: ',recall_svm)
+        print('Recall SVM: ', sum(recall_svm)/len(recall_svm))
+        print('F1-score por clases: ',fscore_svm)
+        print('F1-score SVM: ', sum(fscore_svm)/len(fscore_svm))
+        print('Accuracy SVM: ',accuracy_score(y_evaluation, y_svm_predict))
+        print('Support SVM: ',support_svm)
         #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
         #print('AUC: ',metrics.auc(fpr, tpr))
         #self.precision_recall_curva(y_evaluation,svclassifier.decision_function(X_evaluation))
@@ -1029,7 +1019,7 @@ class MachineLearning(object):
         print('F1-score SVM: ', sum(fscore_svm)/len(fscore_svm))
         print('Accuracy SVM: ',accuracy_score(y_evaluation, y_svm_predict))
         print('Support SVM: ',support_svm)
-        fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
+        #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
         #print('AUC: ',metrics.auc(fpr, tpr))
         #self.precision_recall_curva(y_evaluation,svclassifier.decision_function(X_evaluation))
         print()
@@ -1588,8 +1578,8 @@ if __name__ == "__main__":
 
         #ml.request_objets_elastichsearch(arg.dir)
         #ml.JSONToCSV(arg.dir)
-        #ml.clasificador(arg.dir)
-        ml.calculate_precision_recall_AUC(arg.dir)
+        ml.clasificador(arg.dir)
+        #ml.calculate_precision_recall_AUC(arg.dir)
         #ml.onehotEncoding(arg.dir)
         """
         Saber el número de cluster para modificar parametros de la funcion clustering y draw_kmeans
