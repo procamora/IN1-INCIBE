@@ -38,6 +38,13 @@ import requests
 from elasticsearch import Elasticsearch
 from typing import NoReturn, Dict
 
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import average_precision_score
+from sklearn.preprocessing import label_binarize
+from sklearn.multiclass import OneVsRestClassifier
+from matplotlib import pyplot
+from itertools import cycle
+
 class MachineLearning(object):
 
     def __init__(self):
@@ -75,7 +82,7 @@ class MachineLearning(object):
             scroll_size = len(data['hits']['hits'])
 
         #Generacion del TL y ficheros CSVs
-        self.calculate_ThreatLevel(arrayJSON,workingDir)
+        self.calculate_ThreatLevel(arrayJSON,workingDir,es)
 
     def process_hits(self, hits: Dict, arrayJSON):
         """
@@ -110,9 +117,9 @@ class MachineLearning(object):
 
         return arrayJSON
 
-    def calculate_ThreatLevel(self,arrayJSON,workingDir):
+    def calculate_ThreatLevel(self,arrayJSON,workingDir,es):
         """
-        A partir de la lista de comando de cada session se calcula el nivel de amenaza.
+        A partir de cada session se obtiene el nivel de amenaza.
         Además se generan los ficheros CSVs para train y test
         :param arrayJSON:
         :return:
@@ -126,12 +133,46 @@ class MachineLearning(object):
                 for values in arrayJSON[i].values():
                     for command in values:
                         list_commands.append(command)
-                threatLevel = ThreatLevel()
-                newJSON = {
-                    'IdSession' : key,
-                    'threatLevel': threatLevel.get_threat_level_1(list_commands),
-                    'listInputs' : arrayJSON[i].get(key)
+
+                query = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={
+                    "query": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "match": {
+                                        "session": key
+                                    }
+                                },
+                                {
+                                    "exists": {
+                                        "field": "threatLevel"
+                                    }
+                                }
+                            ]
+                        }
+                    }
                 }
+                                 )
+
+                list_threatLevel = []
+                #Cambiamos los niveles del ThreatLevel ya que en ElasticSearch estan puesto al reves
+                for hit in query['hits']['hits']:
+                    if hit['_source']['threatLevel'] == 3:
+                        list_threatLevel.append(1)
+                    elif hit['_source']['threatLevel'] == 1:
+                        list_threatLevel.append(3)
+                    else:
+                        list_threatLevel.append(hit['_source']['threatLevel'])
+
+                sorted(list_threatLevel)
+
+
+                newJSON = {
+                        'IdSession' : key,
+                        #'threatLevel': threatLevel.get_threat_level_1(list_commands),
+                        'threatLevel': list_threatLevel[len(list_threatLevel)-1],
+                        'listInputs' : arrayJSON[i].get(key)
+                    }
                 data.append(newJSON)
 
 
@@ -729,6 +770,129 @@ class MachineLearning(object):
         for score, fname in sorted(zip(informacion, X_train.columns.values), reverse=True)[:]:
             print(fname, score)
 
+    def calculate_precision_recall_AUC(self, workingDir) -> NoReturn:
+
+        #Obtenemos los datos de evaluacion etiquetados
+        #labeled_evaluation = pd.read_csv(workingDir+"evaluation_data.csv",index_col=0)
+        #y_evaluation=labeled_evaluation["threatLevel"]
+        #X_evaluation=labeled_evaluation.drop('threatLevel',axis=1)
+
+        #Obtenemos los datos de entrenamiento etiquetados
+        #train = pd.read_csv(workingDir+"train_data.csv",index_col=0)
+        #Eliminamos la columna vacia Unnamed introducida de forma automatica al no tener indice
+        #y_train=train["threatLevel"]
+        #X_train = train.drop('threatLevel',axis=1)
+
+        #Entrenando el algoritmo SVM -> {'C': 1000, 'gamma': 0.01, 'kernel': 'rbf'}
+        #svclassifier = OneVsRestClassifier(SVC(kernel='rbf',C=1000,gamma=0.01))
+        #svclassifier.fit(X_train, y_train)
+        #Hacemos la prediccion
+        #X_evaluation = evaluation
+        #y_svm_predict = svclassifier.predict(X_evaluation)
+
+        #y_test = []
+        #for i in range(0,len(y_evaluation)):
+            #y_test.append(y_evaluation[i])
+
+        data = pd.read_csv(workingDir+"all_data.csv",index_col=0)
+        labels = data["threatLevel"]
+        data = data.drop('threatLevel',axis=1)
+
+        Y = label_binarize(labels,classes=[1, 2, 3])
+        n_classes = Y.shape[1]
+
+        X_train, X_test, y_train, y_test = train_test_split(data,Y)
+
+        clf = OneVsRestClassifier(SVC(kernel='rbf',C=1000,gamma=0.01))
+        clf.fit(X_train, y_train)
+
+        y_score = clf.decision_function(X_test)
+
+        # For each class
+        precision = dict()
+        recall = dict()
+        average_precision = dict()
+        for i in range(n_classes):
+            precision[i], recall[i], _ = precision_recall_curve(y_test[:, i],
+                                                                y_score[:, i])
+            average_precision[i] = average_precision_score(y_test[:, i], y_score[:, i])
+
+        # A "micro-average": quantifying score on all classes jointly
+        precision["micro"], recall["micro"], _ = precision_recall_curve(y_test.ravel(),
+                                                                        y_score.ravel())
+        average_precision["micro"] = average_precision_score(y_test, y_score,
+                                                             average="micro")
+        print('Average precision score, micro-averaged over all classes: {0:0.2f}'
+              .format(average_precision["micro"]))
+
+        #plt.figure()
+        #plt.step(recall['micro'], precision['micro'], color='b', alpha=0.2,where='post')
+        #plt.fill_between(recall["micro"], precision["micro"], alpha=0.2, color='b')
+
+        #plt.xlabel('Recall')
+        #plt.ylabel('Precision')
+        #plt.ylim([0.0, 1.05])
+        #plt.xlim([0.0, 1.0])
+        #plt.title('Average precision score, micro-averaged over all classes: AP={0:0.2f}'.format(average_precision["micro"]))
+        #plt.show()
+
+        # setup plot details
+        colors = cycle(['navy', 'turquoise', 'darkorange', 'cornflowerblue', 'teal'])
+
+        plt.figure(figsize=(7, 8))
+        f_scores = numpy.linspace(0.2, 0.8, num=4)
+        lines = []
+        labels = []
+        for f_score in f_scores:
+            x = numpy.linspace(0.01, 1)
+            y = f_score * x / (2 * x - f_score)
+            l, = plt.plot(x[y >= 0], y[y >= 0], color='gray', alpha=0.2)
+            plt.annotate('f1={0:0.1f}'.format(f_score), xy=(0.9, y[45] + 0.02))
+
+        lines.append(l)
+        labels.append('iso-f1 curves')
+        l, = plt.plot(recall["micro"], precision["micro"], color='gold', lw=2)
+        lines.append(l)
+        labels.append('micro-average Precision-recall (area = {0:0.2f})'
+                      ''.format(average_precision["micro"]))
+
+        for i, color in zip(range(n_classes), colors):
+            l, = plt.plot(recall[i], precision[i], color=color, lw=2)
+            lines.append(l)
+            labels.append('Precision-recall for class {0} (area = {1:0.2f})'
+                          ''.format(i, average_precision[i]))
+
+        fig = plt.gcf()
+        fig.subplots_adjust(bottom=0.25)
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Extension of Precision-Recall curve to multi-class')
+        plt.legend(lines, labels, loc=(0, -.38), prop=dict(size=14))
+
+
+        plt.show()
+
+
+        #print('Score train SVM: ',svclassifier.score(X_train,y_train))
+        #print('Score evaluation SVM: ',svclassifier.score(X_evaluation,y_evaluation))
+
+        #precision_svm, recall_svm, fscore_svm, support_svm = precision_recall_fscore_support(y_evaluation, y_svm_predict)
+
+        #print('Precision por clases: ',precision_svm)
+        #print('Precision SVM: ', sum(precision_svm)/len(precision_svm))
+        #print('Recall por clases: ',recall_svm)
+        #print('Recall SVM: ', sum(recall_svm)/len(recall_svm))
+        #print('F1-score por clases: ',fscore_svm)
+        #print('F1-score SVM: ', sum(fscore_svm)/len(fscore_svm))
+        #print('Accuracy SVM: ',accuracy_score(y_evaluation, y_svm_predict))
+        #print('Support SVM: ',support_svm)
+        #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
+        #print('AUC: ',metrics.auc(fpr, tpr))
+        #self.precision_recall_curva(y_evaluation,svclassifier.decision_function(X_evaluation))
+        print()
+
     def clasificador(self, workingDir) -> NoReturn:
 
         """
@@ -768,7 +932,7 @@ class MachineLearning(object):
         print('Score train K-NN: ',knnclassifier.score(X_train,y_train))
         print('Score evaluation K-NN: ',knnclassifier.score(X_evaluation,y_evaluation))
 
-        precision_knn, recall_knn, fscore_knn, support_knn = precision_recall_fscore_support(y_evaluation, y_knn_predict)
+        precision_knn, recall_knn, fscore_knn, support_knn = precision_recall_fscore_support(y_evaluation, y_knn_predict,labels=numpy.unique(y_evaluation))
 
         print('Precision por clases: ',precision_knn)
         print('Precision k-nn: ', sum(precision_knn)/len(precision_knn))
@@ -860,10 +1024,29 @@ class MachineLearning(object):
         print('F1-score SVM: ', sum(fscore_svm)/len(fscore_svm))
         print('Accuracy SVM: ',accuracy_score(y_evaluation, y_svm_predict))
         print('Support SVM: ',support_svm)
-        #fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
+        fpr, tpr, thresholds = metrics.roc_curve(y_evaluation, y_svm_predict, pos_label=2)
         #print('AUC: ',metrics.auc(fpr, tpr))
+        #self.precision_recall_curva(y_evaluation,svclassifier.decision_function(X_evaluation))
         print()
 
+    def precision_recall_curva(self,y_evalua,y_predi):
+        n_classes = 3
+        # For each class
+        precision = dict()
+        recall = dict()
+        average_precision = dict()
+
+        for i in range(n_classes):
+            precision[i], recall[i], _ = precision_recall_curve(y_evalua[i], y_predi[i])
+            average_precision[i] = average_precision_score(y_evalua[i], y_predi[i])
+
+        # A "micro-average": quantifying score on all classes jointly
+        precision["micro"], recall["micro"], _ = precision_recall_curve(y_evalua.ravel(),
+                                                                        y_predi.ravel())
+        average_precision["micro"] = average_precision_score(y_evalua, y_predi,
+                                                             average="micro")
+        print('Average precision score, micro-averaged over all classes: {0:0.2f}'
+              .format(average_precision["micro"]))
 
     def tuned_parameter_svm (X_train, y_train):
 
@@ -1398,9 +1581,10 @@ if __name__ == "__main__":
     if arg.dir is not None:
         start = timer()
 
-        #ml.request_objets_elastichsearch(arg.dir)
+        ml.request_objets_elastichsearch(arg.dir)
         #ml.JSONToCSV(arg.dir)
-        ml.clasificador(arg.dir)
+        #ml.clasificador(arg.dir)
+        #ml.calculate_precision_recall_AUC(arg.dir)
         #ml.onehotEncoding(arg.dir)
         """
         Saber el número de cluster para modificar parametros de la funcion clustering y draw_kmeans
