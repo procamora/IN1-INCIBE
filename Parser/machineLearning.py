@@ -331,6 +331,7 @@ class MachineLearning(object):
         data_vectors = []
 
         #Solo tiene en cuenta las sesiones con comandos
+
         for i in dataCompleted:
             if len(i["listInputs"]) > 0:
                 current_vector = [0,0,0,0,0,0,0,0,0]
