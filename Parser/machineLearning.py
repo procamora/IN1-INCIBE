@@ -134,7 +134,7 @@ class MachineLearning(object):
                     for command in values:
                         list_commands.append(command)
 
-                query = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={
+                threatLevel = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={
                     "query": {
                         "bool": {
                             "must": [
@@ -156,7 +156,7 @@ class MachineLearning(object):
 
                 list_threatLevel = []
                 #Cambiamos los niveles del ThreatLevel ya que en ElasticSearch estan puesto al reves
-                for hit in query['hits']['hits']:
+                for hit in threatLevel['hits']['hits']:
                     if hit['_source']['threatLevel'] == 3:
                         list_threatLevel.append(1)
                     elif hit['_source']['threatLevel'] == 1:
@@ -166,12 +166,60 @@ class MachineLearning(object):
 
                 sorted(list_threatLevel)
 
+                countryName = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={
+                    "query": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "match": {
+                                        "session": key
+                                    }
+                                },
+                                {
+                                    "exists": {
+                                        "field": "countryName"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+                                        )
+
+                for hit in countryName['hits']['hits']:
+                    country_Name = hit['_source']['countryName']
+
+                shortName = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={
+                    "query": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "match": {
+                                        "session": key
+                                    }
+                                },
+                                {
+                                    "exists": {
+                                        "field": "shortName"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+                                        )
+
+                for hit in shortName ['hits']['hits']:
+                    short_Name = hit['_source']['shortName']
+
 
                 newJSON = {
                         'IdSession' : key,
                         #'threatLevel': threatLevel.get_threat_level_1(list_commands),
                         'threatLevel': list_threatLevel[len(list_threatLevel)-1],
-                        'listInputs' : arrayJSON[i].get(key)
+                        'listInputs' : arrayJSON[i].get(key),
+                        'countryName' : country_Name,
+                        'shortName' : short_Name
                     }
                 data.append(newJSON)
 
@@ -1576,9 +1624,9 @@ if __name__ == "__main__":
     if arg.dir is not None:
         start = timer()
 
-        #ml.request_objets_elastichsearch(arg.dir)
+        ml.request_objets_elastichsearch(arg.dir)
         #ml.JSONToCSV(arg.dir)
-        ml.clasificador(arg.dir)
+        #ml.clasificador(arg.dir)
         #ml.calculate_precision_recall_AUC(arg.dir)
         #ml.onehotEncoding(arg.dir)
         """
