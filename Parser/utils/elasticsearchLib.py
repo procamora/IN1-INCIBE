@@ -456,8 +456,8 @@ if __name__ == '__main__':
 
     if arg.update:
         # Paso 1 crear json descargas y obtener el hash de cada uno
-        # e.create_json_downloads_pending(just_download=True)  # creo json de wget y curl que no existan
-        # e.create_json_downloads_pending(just_download=False)  # creo json de wget y curl que no existan
+        e.create_json_downloads_pending(just_download=True)  # creo json de wget y curl que no existan
+        e.create_json_downloads_pending(just_download=False)  # creo json de wget y curl que no existan
 
         # Paso 2 obtener la peligrodisdad de cada hash
         e.update_dangerous_files()

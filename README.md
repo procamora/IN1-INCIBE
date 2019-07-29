@@ -1,6 +1,97 @@
 # IN1-INCIBE
 
 
+
+
+## REVISAR
+
+
+### url github
+https://github.com/cdemi/cowrie
+
+
+https://github.com/cikgufatah/cowrie
+
+
+https://github.com/fe7ch/cowrie
+
+
+head tail
+https://github.com/maxduijsens/cowrie/commits/master
+
+
+https://github.com/MartinDrab/cowrie/commits/master
+
+docker-compose
+https://github.com/m00cifer/cowrie/commit/abd0d8d4cf6b77a4455a6d99948ffc2b24f2f3b2
+
+multiples commit
+https://github.com/Mato-Z/cowrie/commits/master
+
+mas comandos
+https://github.com/myersg86/cowrie/commit/6ea8c9df26b18d0185855d11ec0ebbb8dec17198
+https://github.com/McNinja/McCowrie/commit/41d1a8fdc1f0331414004f5e1139060317f5258e
+
+https://github.com/micheloosterhof/cowrie-dev
+
+https://github.com/secmobi/cowrie/commits/master
+
+apt y alguno mas
+https://github.com/Wonderfall/cowrie/commit/82cc38f1b2e0de5591c632708d2f8f3e13a508a1
+
+https://github.com/mccore/cowrie/commit/1fbcde9e0e4a3935cfee5da14ba7cbe8a7c21710
+
+
+
+
+### docker-comspose
+
+```
+
+## Instalacion y uso de elasticsearch con Docker
+
+
+bash
+docker pull docker.elastic.co/elasticsearch/elasticsearch:6.5.4
+
+docker run -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" docker.elastic.co/elasticsearch/elasticsearch:6.5.4
+
+
+La documentacion esta en esta [url][elasticsearch]
+
+[elasticsearch]: https://www.elastic.co/guide/en/elasticsearch/reference/6.5/docker.html
+
+
+
+## Instalacion y uso de kibana con Docker
+
+
+bash
+docker pull docker.elastic.co/kibana/kibana:6.5.4
+
+# -dit
+docker run -p 5601:5601 -v $(pwd)/kibana.yml:/usr/share/kibana/config/kibana.yml docker.elastic.co/kibana/kibana:6.5.4
+
+
+La documentacion esta en esta [url][kibana]
+
+[kibana]: https://www.elastic.co/guide/en/kibana/current/docker.html
+```
+
+
+### Otros
+
+```
+## Datos a tener en cuenta a la hora de mostrar informacion y crear filtros acordes
+
+- Location por defecto para ignorar (0,0)
+- Success por defecto -1
+- Size ttylog por defecto -1
+- Clients y shortname unknown
+```
+
+## FIN REVISAR
+
 Descripción
 -----------
 
