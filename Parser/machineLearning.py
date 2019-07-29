@@ -213,13 +213,78 @@ class MachineLearning(object):
                     short_Name = hit['_source']['shortName']
 
 
+                date = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={
+                    "query": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "match": {
+                                        "session": key
+                                    }
+                                },
+                                {
+                                    "exists": {
+                                        "field": "endtime"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+                                 )
+
+                endtime = ''
+                starttime = ''
+
+                for hit in date ['hits']['hits']:
+                    endtime = hit['_source']['endtime']
+                    starttime = hit['_source']['starttime']
+
+                hours_end = int(endtime.split(' ')[1].split(':')[0])*3600
+                minutes_end = int(endtime.split(' ')[1].split(':')[1])*60
+                seconds_end = int(endtime.split(' ')[1].split(':')[2])
+
+                hours_start = int(starttime.split(' ')[1].split(':')[0])*3600
+                minutes_start = int(starttime.split(' ')[1].split(':')[1])*60
+                seconds_start = int(starttime.split(' ')[1].split(':')[2])
+
+                total_time = (hours_end+minutes_end+seconds_end)-(hours_start+minutes_start+seconds_start)
+
+                dangerous = es.search(index="output-scriptzteam", scroll='2m', size=self._size, body={
+                    "query": {
+                        "bool": {
+                            "must": [
+                                {
+                                    "match": {
+                                        "session": key
+                                    }
+                                },
+                                {
+                                    "exists": {
+                                        "field": "dangerous"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+                                      )
+
+                for hit in dangerous ['hits']['hits']:
+                    dangerous = hit['_source']['dangerous']
+                if not isinstance(dangerous,int):
+                    dangerous = -3
+                    #Asignamos -3 para indicar que la sesión no tiene descargas
+
                 newJSON = {
                         'IdSession' : key,
                         #'threatLevel': threatLevel.get_threat_level_1(list_commands),
                         'threatLevel': list_threatLevel[len(list_threatLevel)-1],
                         'listInputs' : arrayJSON[i].get(key),
                         'countryName' : country_Name,
-                        'shortName' : short_Name
+                        'shortName' : short_Name,
+                        'totalTime' : total_time,
+                        'dangerous' : dangerous
                     }
                 data.append(newJSON)
 
@@ -228,7 +293,7 @@ class MachineLearning(object):
         self.createFileCSV(workingDir,"all_data",data,label_dict)
 
         #import csv files from folder
-        combined_csv = pd.concat([pd.read_csv(workingDir+f) for f in os.listdir(workingDir) if(f.find(".csv")>0)]).set_index('IdSession')
+        combined_csv = pd.concat([pd.read_csv(workingDir+f) for f in os.listdir(workingDir) if(f.find(".csv")>0)],sort=False).set_index('IdSession')
 
         #Dividimos todos los datos en train y evaluation
         self.separate_train_evaluatio(workingDir,combined_csv)
@@ -334,7 +399,7 @@ class MachineLearning(object):
 
         for i in dataCompleted:
             if len(i["listInputs"]) > 0:
-                current_vector = [0,0,0,0,0,0,0,0,0]
+                current_vector = [0,0,0,0,0,0,0,0,0,0,0,0,0]
                 current_vector[0] = i["IdSession"]
                 #print("Nueva session: ",current_vector[0])
                 #print(i["listInputs"])
@@ -370,15 +435,29 @@ class MachineLearning(object):
                             #print('Info: ',current_command)
                             current_vector[7] = 1
                         # Si no ha hecho matching con ninguna lista lo ponemos como obtencion de informacion
-                    if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0] and i["listInputs"][j]!='':
+                    if current_vector == [i["IdSession"],0,0,0,0,0,0,0,0,0,0,0,0] and i["listInputs"][j]!='':
                         current_vector[7] = 1
+
+                if i["countryName"] != '':
+                    current_vector [8] = i["countryName"]
+
+                if i["shortName"] != '':
+                    current_vector [9] = i["shortName"]
+
+                if i["totalTime"] != '':
+                    current_vector [10] = i["totalTime"]
+
+                if i["dangerous"] != '':
+                    current_vector [11] = i["dangerous"]
+
                 #Añadimos las etiquetas de cada IdSession a un diccionario
                 if i["threatLevel"] != '':
                     label_dict[i["IdSession"]] = i["threatLevel"]
-                    current_vector [8] = i["threatLevel"]
+                    current_vector [12] = i["threatLevel"]
+
                 data_vectors.append(current_vector)
 
-        df = pd.DataFrame(data_vectors,columns=['IdSession','F_leer_disco','F_escribir_disco','F_conexiones_internet','F_instalacion_compilacion_programas','F_ejecucion_programas','F_matar_suspender_procesos','F_obtencion_informacion','threatLevel']).set_index('IdSession')
+        df = pd.DataFrame(data_vectors,columns=['IdSession','F_leer_disco','F_escribir_disco','F_conexiones_internet','F_instalacion_compilacion_programas','F_ejecucion_programas','F_matar_suspender_procesos','F_obtencion_informacion','countryName','shortName','totalTime','dangerous','threatLevel']).set_index('IdSession')
         df.to_csv(workingDir+withoutextension+'.csv')
 
     def separate_train_evaluatio(self, workingDir, df) -> NoReturn:
