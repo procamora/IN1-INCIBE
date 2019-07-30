@@ -295,8 +295,16 @@ class MachineLearning(object):
         #import csv files from folder
         combined_csv = pd.concat([pd.read_csv(workingDir+f) for f in os.listdir(workingDir) if(f.find(".csv")>0)],sort=False).set_index('IdSession')
 
+        #Aplicamos onehotencode.
+        #Get_dummies aplica onehotencode a la columna de string indicada, dejando el resto de columnas sin tocar.
+        #Con axis = 1 le indicamos que aplica onehotencode a toda la columna input
+        dataFrame = pd.concat([combined_csv, pd.get_dummies(data=combined_csv,columns=['countryName','shortName'])], axis=1)
+
+        #Borramos la antigua columna input con los comandos en forma de string
+        dataFrame.drop(['countryName','shortName'], axis=1, inplace=True)
+
         #Dividimos todos los datos en train y evaluation
-        self.separate_train_evaluatio(workingDir,combined_csv)
+        self.separate_train_evaluatio(workingDir,dataFrame)
 
     def getJSON(self,fileJSON):
         """
@@ -1704,9 +1712,9 @@ if __name__ == "__main__":
     if arg.dir is not None:
         start = timer()
 
-        ml.request_objets_elastichsearch(arg.dir)
+        #ml.request_objets_elastichsearch(arg.dir)
         #ml.JSONToCSV(arg.dir)
-        #ml.clasificador(arg.dir)
+        ml.clasificador(arg.dir)
         #ml.calculate_precision_recall_AUC(arg.dir)
         #ml.onehotEncoding(arg.dir)
         """
