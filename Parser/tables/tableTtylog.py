@@ -19,7 +19,6 @@ class TableTtylog(Table):
         self._ttylog = self._DEFAULT_VALUE
         self._size = -1
 
-    @property
     def set_size(self, size) -> NoReturn:
         """
         Metodo para establecer el tamaño de la ttylog
@@ -30,7 +29,6 @@ class TableTtylog(Table):
         if size != -1:
             self._size = int(size)
 
-    @property
     def set_ttylog(self, ttylog) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla

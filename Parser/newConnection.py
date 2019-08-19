@@ -49,7 +49,7 @@ class NewConnection(json.JSONEncoder):
         self._listDownloads = list()
 
         # Establecemos algunos valores de session
-        self._session.load(self._connectionAux.get_starttime(), self._connectionAux.getIp())
+        self._session.load(self._connectionAux.getStarttime(), self._connectionAux.getIp())
         self._geoip.setIp(self._connectionAux.getIp())
 
     def getId(self) -> str:

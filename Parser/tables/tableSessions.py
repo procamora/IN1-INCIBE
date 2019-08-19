@@ -21,7 +21,6 @@ class TableSessions(Table):
         self._ip = str()
         self._termsize = self._DEFAULT_VALUE
 
-    @property
     def set_endtime(self, endtime) -> NoReturn:
         """
         Metodo para establecer la fecha y hora de desconexion de la sesion
@@ -32,15 +31,12 @@ class TableSessions(Table):
         if len(endtime) > 0:
             self._endtime = endtime
 
-    @property
     def get_endtime(self) -> str:
         return self._endtime
 
-    @property
     def get_starttime(self) -> str:
         return self._starttime
 
-    @property
     def set_termsize(self, termsize) -> NoReturn:
         """
         Metodo para estabecer el tamaño de la terminar

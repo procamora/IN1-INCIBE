@@ -20,7 +20,6 @@ class TableInput(Table):
         self._success = -1
         self._input = str()
 
-    @property
     def set_success(self, success) -> NoReturn:
         """
         Metodo para establecer el valor de la ejecucion de un comando (valido/invalido)
@@ -30,7 +29,6 @@ class TableInput(Table):
         """
         self._success = int(success)
 
-    @property
     def get_input(self) -> NoReturn:
         """
         Metodo para obtener el valor de _input, corresponde con el comando ejecutado
