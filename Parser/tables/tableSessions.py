@@ -1,11 +1,13 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 from .table import Table
 
 
+@dataclass(order=True)
 class TableSessions(Table):
     """
     Clase que contiene los campos de la tabla Sessions
@@ -16,10 +18,10 @@ class TableSessions(Table):
         Constructor de clase
         """
         super().__init__()
-        self._starttime = str()
-        self._endtime = str()
-        self._ip = str()
-        self._termsize = self._DEFAULT_VALUE
+        self._starttime: str = str()
+        self._endtime: str = str()
+        self._ip: str = str()
+        self._termsize: str = self._DEFAULT_VALUE
 
     def set_endtime(self, endtime) -> NoReturn:
         """

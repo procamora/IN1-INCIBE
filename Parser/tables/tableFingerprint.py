@@ -1,11 +1,13 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 from .table import Table
 
 
+@dataclass(order=True)
 class TableFingerprint(Table):
     """
     Clase que contiene los campos de la tabla fingerprint
@@ -16,7 +18,7 @@ class TableFingerprint(Table):
         Constructor de clase
         """
         super().__init__()
-        self._fingerprint = str()
+        self._fingerprint: str = str()
 
     def setFingerprint(self, fingerprint) -> NoReturn:
         """

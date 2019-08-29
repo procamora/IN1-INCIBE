@@ -1,6 +1,7 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 import geoip2.database
@@ -9,6 +10,7 @@ from geoip2.errors import AddressNotFoundError
 from .table import Table
 
 
+@dataclass(order=True)
 class TableGeoIp(Table):
     """
     Clase que contiene los campos de la tabla ipinfo
@@ -19,15 +21,15 @@ class TableGeoIp(Table):
         Constructor de clase
         """
         super().__init__()
-        self._geoip2DB = geoip2DB
-        self._ip = str()
-        self._continentName = self._DEFAULT_VALUE
-        self._continentCode = self._DEFAULT_VALUE
-        self._countryName = self._DEFAULT_VALUE
-        self._countryCode = self._DEFAULT_VALUE
-        self._cityName = self._DEFAULT_VALUE
-        self._postalCode = self._DEFAULT_VALUE
-        self._location = '0,0'
+        self._geoip2DB: str = geoip2DB
+        self._ip: str = str()
+        self._continentName: str = self._DEFAULT_VALUE
+        self._continentCode: str = self._DEFAULT_VALUE
+        self._countryName: str = self._DEFAULT_VALUE
+        self._countryCode: str = self._DEFAULT_VALUE
+        self._cityName: str = self._DEFAULT_VALUE
+        self._postalCode: str = self._DEFAULT_VALUE
+        self._location: str = '0,0'
 
     def setIp(self, ip) -> NoReturn:
         """

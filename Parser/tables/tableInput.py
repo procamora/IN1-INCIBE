@@ -1,11 +1,13 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 from .table import Table
 
 
+@dataclass(order=True)
 class TableInput(Table):
     """
     Clase que contiene los campos de la tabla input
@@ -16,9 +18,9 @@ class TableInput(Table):
         Constructor de clase
         """
         super().__init__()
-        self._timestamp = str()
-        self._success = -1
-        self._input = str()
+        self._timestamp: str = str()
+        self._success: int = -1
+        self._input: str = str()
 
     def set_success(self, success) -> NoReturn:
         """

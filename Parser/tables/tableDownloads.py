@@ -1,11 +1,13 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 from .table import Table
 
 
+@dataclass(order=True)
 class TableDownloads(Table):
     """
     Clase que contiene los campos de la tabla downloads
@@ -22,11 +24,11 @@ class TableDownloads(Table):
         :return:
         """
         super().__init__()
-        self._timestamp = timestamp
-        self._url = url
-        self._outfile = outfile
-        self._shasum = shasum
-        self._dangerous = -1  # no analizado
+        self._timestamp: str = timestamp
+        self._url: str = url
+        self._outfile: str = outfile
+        self._shasum: str = shasum
+        self._dangerous: int = -1  # no analizado
 
     def __getstate__(self) -> Dict[str, Any]:
         """

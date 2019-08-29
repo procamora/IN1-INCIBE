@@ -6,6 +6,15 @@
 - [ ] Es necesario guardar el dominio de url que usen atacantes?? direct-tcp  (information leakage)
 - [ ] Almacenar en json el outcomming o  el incomming
 
+## Mejoras
+
+- [ ] Meter en fich conf url y otras constantes
+- [ ] Controlador para api rest
+ 
+## Pendiente
+
+- [ ] Explicar parser fichero configuracion
+
 ## Datos a tener en cuenta a la hora de mostrar informacion y crear filtros acordes
 
 - Location por defecto para ignorar (0,0)

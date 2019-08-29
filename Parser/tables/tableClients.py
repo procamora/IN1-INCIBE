@@ -1,10 +1,12 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 from .table import Table
 
 
+@dataclass(order=True)
 class TableClients(Table):
     """
     Clase que contiene los campos de la tabla clients
@@ -15,12 +17,12 @@ class TableClients(Table):
         Constructor de clase
         """
         super().__init__()
-        self._version = self._DEFAULT_VALUE
-        self._shortName = self._DEFAULT_VALUE
-        self._kexAlg = self._DEFAULT_VALUE
-        self._keyAlg = self._DEFAULT_VALUE
-        self._encryption = self._DEFAULT_VALUE
-        self._authentication = self._DEFAULT_VALUE
+        self._version: str = self._DEFAULT_VALUE
+        self._shortName: str = self._DEFAULT_VALUE
+        self._kexAlg: str = self._DEFAULT_VALUE
+        self._keyAlg: str = self._DEFAULT_VALUE
+        self._encryption: str = self._DEFAULT_VALUE
+        self._authentication: str = self._DEFAULT_VALUE
 
     def load(self, version, shortName) -> NoReturn:
         """

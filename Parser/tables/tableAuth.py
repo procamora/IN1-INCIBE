@@ -1,11 +1,13 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 from .table import Table
 
 
+@dataclass(order=True)
 class TableAuth(Table):
     """
     Clase que contiene los campos de la tabla auth
@@ -16,10 +18,10 @@ class TableAuth(Table):
         Constructor de clase
         """
         super().__init__()
-        self._success = -1
-        self._username = str()
-        self._password = str()
-        self._timestamp = str()
+        self._success: int = -1
+        self._username: str = str()
+        self._password: str = str()
+        self._timestamp: str = str()
 
     def load(self, success, username, password, timestamp) -> NoReturn:
         """

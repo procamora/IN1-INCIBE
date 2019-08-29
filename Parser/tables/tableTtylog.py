@@ -1,11 +1,13 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
+from dataclasses import dataclass
 from typing import NoReturn, Dict, Any
 
 from .table import Table
 
 
+@dataclass(order=True)
 class TableTtylog(Table):
     """
     Clase que contiene los campos de la tabla ttylog
@@ -16,8 +18,8 @@ class TableTtylog(Table):
         Constructor de clase
         """
         super().__init__()
-        self._ttylog = self._DEFAULT_VALUE
-        self._size = -1
+        self._ttylog: str = self._DEFAULT_VALUE
+        self._size: int = -1
 
     def set_size(self, size) -> NoReturn:
         """
