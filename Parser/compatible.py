@@ -3,6 +3,7 @@
 
 import configparser
 import json
+import logging
 from timeit import default_timer as timer
 from typing import NoReturn
 
@@ -11,7 +12,7 @@ from utils.functions import check_dir, write_file, get_number_lines_file
 
 
 class Compatible(object):
-    def __init__(self, logger, directory, my_config) -> NoReturn:
+    def __init__(self, logger: logging, directory: str, my_config: str) -> NoReturn:
         """
         Constructor de clase
 

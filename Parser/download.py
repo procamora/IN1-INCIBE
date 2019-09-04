@@ -9,7 +9,7 @@ class Download(object):
     Clase download, tiene informacion de una descarga realizada por la sesion
     """
 
-    def __init__(self, url, hash1, path, timestamp) -> NoReturn:
+    def __init__(self, url: str, hash1: str, path: str, timestamp: str) -> NoReturn:
         """
         Constructor de clase
 

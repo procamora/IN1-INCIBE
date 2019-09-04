@@ -3,6 +3,7 @@
 
 import configparser
 import json
+import logging
 from timeit import default_timer as timer
 from typing import NoReturn
 
@@ -11,7 +12,7 @@ from utils.functions import check_dir, write_file
 
 
 class CompleteSession(object):
-    def __init__(self, logger, output, my_config) -> NoReturn:
+    def __init__(self, logger: logging, output: str, my_config: str) -> NoReturn:
         """
         Constructor de clase
 
@@ -36,7 +37,7 @@ class CompleteSession(object):
         with open(self._file_no_session, 'r') as f:
             self._lines_no_session = f.readlines()
 
-    def search(self, line_session_json) -> bool:
+    def search(self, line_session_json: dict) -> bool:
         """
         Metodo para comprobar si hay alguna linea de sesion no iniciada que coincide con una sesion iniciada dada
 
@@ -52,7 +53,7 @@ class CompleteSession(object):
                 return True
         return False
 
-    def writeLogSession(self) -> NoReturn:
+    def write_log_session(self) -> NoReturn:
         """
         Metodo que añade al fichero principal las sesiones que han sido recuperadas
 
@@ -100,7 +101,7 @@ class CompleteSession(object):
                         self._json_non_trated.append(lineSessionJson)
             self._logger.debug('{}/{}'.format(count_lines, count_lines))
 
-        self.writeLogSession()
+        self.write_log_session()
         self.writeLogNoSession()
 
         endTotal = timer()

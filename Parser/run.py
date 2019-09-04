@@ -43,6 +43,9 @@ def CreateArgParser() -> argparse:
 if __name__ == "__main__":
     arg = CreateArgParser()
 
+    if os.path.exists('{}/{}'.format(arg.output, config['DEFAULTS']['FILE_LOG_COWRIE'])):
+        os.remove('{}/{}'.format(arg.output, config['DEFAULTS']['FILE_LOG_COWRIE']))
+
     logger = get_logger(arg.verbose)
 
     logger.info('Start Parser')

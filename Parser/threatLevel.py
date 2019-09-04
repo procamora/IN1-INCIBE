@@ -25,7 +25,7 @@ class ThreatLevel(object):
         #
         return 1
 
-    def get_threat_level(self, list_inputs) -> int:
+    def get_threat_level(self, list_inputs: list) -> int:
         if len(list_inputs) == 0:
             return 4
 
@@ -41,7 +41,7 @@ class ThreatLevel(object):
 
         return 1
 
-    def get_threat_level_1(self, list_inputs) -> int:
+    def get_threat_level_1(self, list_inputs: list) -> int:
         if len(list_inputs) == 0:
             return 4
 

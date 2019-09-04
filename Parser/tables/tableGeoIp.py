@@ -16,12 +16,12 @@ class TableGeoIp(Table):
     Clase que contiene los campos de la tabla ipinfo
     """
 
-    def __init__(self, geoip2DB) -> NoReturn:
+    def __init__(self, geoip2DB: geoip2) -> NoReturn:
         """
         Constructor de clase
         """
         super().__init__()
-        self._geoip2DB: str = geoip2DB
+        self._geoip2DB: geoip2 = geoip2DB
         self._ip: str = str()
         self._continentName: str = self._DEFAULT_VALUE
         self._continentCode: str = self._DEFAULT_VALUE
@@ -31,7 +31,7 @@ class TableGeoIp(Table):
         self._postalCode: str = self._DEFAULT_VALUE
         self._location: str = '0,0'
 
-    def setIp(self, ip) -> NoReturn:
+    def setIp(self, ip: str) -> NoReturn:
         """
         Metedo establece la ip y obtiene la informacion geografica
 
@@ -73,8 +73,8 @@ class TableGeoIp(Table):
         if response.location.latitude is not None and response.location.longitude is not None:
             self._location = '{lat},{lon}'.format(lat=response.location.latitude, lon=response.location.longitude)
 
-    def loadGeoIpExtended(self, continentName, continentCode, countryName, countryCode, cityName, postalCode,
-                          location) -> NoReturn:
+    def loadGeoIpExtended(self, continentName: str, continentCode: str, countryName: str, countryCode: str,
+                          cityName: str, postalCode: str, location: str) -> NoReturn:
         if len(continentName) > 0:
             self._continentName = continentName
             self._continentCode = continentCode

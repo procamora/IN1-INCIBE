@@ -9,7 +9,7 @@ class ConnectionAux(object):
     Clase que contiene la informacion que se obtiene en la linea de New Connection
     """
 
-    def __init__(self, ip, session, starttime) -> NoReturn:
+    def __init__(self, ip: str, session: str, starttime: str) -> NoReturn:
         """
         Constructor de clase
 
@@ -38,7 +38,7 @@ class ConnectionAux(object):
         """
         return "{},{}".format(self._pid, self._ip)
 
-    def setId(self, pid) -> NoReturn:
+    def setId(self, pid: str) -> NoReturn:
         """
         Metodo para establecer el id de la conexion
 

@@ -2,15 +2,20 @@
 # -*- coding: utf-8 -*-
 
 
+from __future__ import annotations
+
 import json
+import logging
 import re
-from typing import NoReturn, List
+from typing import NoReturn, List, Union
+import geoip2
 
 from connectionAux import ConnectionAux
 from objectEncoder import ObjectEncoder
 from tables import *
 from threatLevel import ThreatLevel
 from utils.functions import parser_date_time, malware_get_reputation_ip
+from download import Download
 
 
 class NewConnection(json.JSONEncoder):
@@ -18,7 +23,7 @@ class NewConnection(json.JSONEncoder):
     Clase que contiene toda la informacion almacenada en el log de una NewConection
     """
 
-    def __init__(self, connectionAux, logger, geoip2DB) -> NoReturn:
+    def __init__(self, connectionAux: ConnectionAux, logger: logging, geoip2DB: Union[geoip2, None]) -> NoReturn:
         """
         Constructor de clase
 
@@ -60,7 +65,7 @@ class NewConnection(json.JSONEncoder):
         """
         return self._connectionAux.getId()
 
-    def checkCommandPending(self, command) -> bool:
+    def checkCommandPending(self, command: Download) -> bool:
         """
         Metodo que retorna True si el comando wget que recibe esta pendiente de comprobar, si esta pendiente lo borra
         de la lista de comandos pendientes y lo añade a la lista de descargas
@@ -81,7 +86,7 @@ class NewConnection(json.JSONEncoder):
 
         return False
 
-    def addLine(self, line) -> bool:
+    def addLine(self, line: str) -> bool:
         """
         Metodo para analizar una linea, comprueba si la linea coincide con alguna de las regex, si coincide guardara esa
         informacion en la tabla asociada a esa informacion
@@ -230,7 +235,7 @@ class NewConnection(json.JSONEncoder):
 
         return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
 
-    def getJSONCowrie(self, logger, dict_reputation_ip: dict) -> str:
+    def getJSONCowrie(self, logger: logging, dict_reputation_ip: dict) -> str:
         """
         Metodo para obtener un string con toda la informacion de la conexion en formato JSON
 
@@ -296,42 +301,42 @@ class NewConnection(json.JSONEncoder):
         # return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
         return myJson
 
-    def loadClient(self, stringJson) -> NoReturn:
+    def loadClient(self, stringJson: dict) -> NoReturn:
         self._client.load(stringJson['version'], stringJson['shortName'])
         self._client.setKeyAlg(stringJson['keyAlg'])
         self._client.setKexAlg(stringJson['kexAlg'])
         self._client.setEncryption(stringJson['encryption'])
         self._client.setAuthentication(stringJson['authentication'])
 
-    def loadTtylog(self, stringJson) -> NoReturn:
+    def loadTtylog(self, stringJson: dict) -> NoReturn:
         self._ttylog.set_ttylog(stringJson['ttylog'])
         self._ttylog.set_size(stringJson['size'])
 
-    def loadSession(self, stringJson) -> NoReturn:
+    def loadSession(self, stringJson: dict) -> NoReturn:
         self._session.load(stringJson['starttime'], stringJson['ip'])
         self._session.set_endtime(stringJson['endtime'])
         self._session.set_termsize(stringJson['termsize'])
 
-    def loadGeoIp(self, stringJson) -> NoReturn:
+    def loadGeoIp(self, stringJson: dict) -> NoReturn:
         self._geoip.loadGeoIpExtended(stringJson['continentName'], stringJson['continentCode'],
                                       stringJson['countryName'], stringJson['countryCode'], stringJson['cityName'],
                                       stringJson['postalCode'], stringJson['location'])
 
-    def loadFingerprint(self, stringJson) -> NoReturn:
+    def loadFingerprint(self, stringJson: dict) -> NoReturn:
         self._fingerprint.setFingerprint(stringJson['fingerprint'])
 
-    def loadInput(self, stringJson) -> NoReturn:
+    def loadInput(self, stringJson: dict) -> NoReturn:
         t = TableInput()
         t.load(stringJson['timestamp'], stringJson['input'])
         t.set_success(stringJson['success'])
         self._listInputs.append(t)
 
-    def loadAuth(self, stringJson) -> NoReturn:
+    def loadAuth(self, stringJson: dict) -> NoReturn:
         a = TableAuth()
         a.load(stringJson['success'], stringJson['username'], stringJson['password'], stringJson['timestamp'])
         self._listAuths.append(a)
 
-    def loadDownload(self, stringJson) -> NoReturn:
+    def loadDownload(self, stringJson: dict) -> NoReturn:
         d = TableDownloads(stringJson['timestamp'], stringJson['url'], stringJson['outfile'], stringJson['shasum'])
         self._listDownloads.append(d)
 
@@ -356,7 +361,7 @@ class NewConnection(json.JSONEncoder):
         return False
 
     @staticmethod
-    def getListCommands(commands) -> List[str]:
+    def getListCommands(commands: str) -> List[str]:
         listCommands = list()
         # Casos especificos donde el comando lleva una regex
         if re.search(r'(grep -E)', commands):
@@ -370,7 +375,7 @@ class NewConnection(json.JSONEncoder):
         return listCommands
 
     @staticmethod
-    def isCommandFound(line, regex) -> bool:
+    def isCommandFound(line: str, regex: str) -> bool:
         """
         Metodo para comprobar si un comando se ha ejecutado con exito, avanza las lineas necesarias
         hasta llegar a la linea que indica si ha tenido exito la ejecucion del comando
@@ -385,7 +390,7 @@ class NewConnection(json.JSONEncoder):
             return False
 
     @staticmethod
-    def fromJson(jsonSession, jsonNoSession, simple=True):
+    def fromJson(jsonSession: dict, jsonNoSession: dict, simple: bool = True) -> NewConnection:
         aux = ConnectionAux(jsonSession['session']['ip'], jsonSession['IdSession'], jsonSession['session']['starttime'])
         aux.setId(jsonSession['idip'].split(',')[0])
         nCon = NewConnection(aux, False, None)

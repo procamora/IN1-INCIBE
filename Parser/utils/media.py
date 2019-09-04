@@ -1,27 +1,22 @@
- 
-#!/bin/env python3
+# !/bin/env python3
 # -*- coding: utf-8 -*-
 
-import configparser
-import json
-import re
-import sys
-from http import HTTPStatus  # https://docs.python.org/3/library/http.html
-from timeit import default_timer as timer
-from typing import NoReturn, Dict, Any, Union, List
-
-import requests
-from elasticsearch import Elasticsearch, exceptions
-import functions
 from datetime import datetime
+from timeit import default_timer as timer
+from typing import NoReturn, Dict, List
+
 import numpy
+from elasticsearch import Elasticsearch
 from scipy import stats
 
+import functions
 
 TIMEOUT = 600
 
+
 def imprimir(texto, valor):
     print('{} {}\n'.format(texto, valor))
+
 
 def promedio(datos):
     sumatoria = sum(datos)
@@ -33,6 +28,7 @@ def promedio(datos):
     resultado = sumatoria / longitud
     imprimir('El resultado es: ', resultado)
 
+
 def moda(datos):
     repeticiones = 0
 
@@ -41,20 +37,21 @@ def moda(datos):
         if n > repeticiones:
             repeticiones = n
 
-    moda = [] #Arreglo donde se guardara el o los valores de mayor frecuencia 
+    moda = []  # Arreglo donde se guardara el o los valores de mayor frecuencia
 
     for i in datos:
-        n = datos.count(i) # Devuelve el número de veces que x aparece enla lista.
+        n = datos.count(i)  # Devuelve el número de veces que x aparece enla lista.
         if n == repeticiones and i not in moda:
             moda.append(i)
 
     if len(moda) != len(datos):
-        imprimir ('Moda: ', moda)
+        imprimir('Moda: ', moda)
     else:
-        print ('No hay moda')
+        print('No hay moda')
+
 
 def media(datos):
-    datos.sort() #.sort Ordena los ítems dela lista
+    datos.sort()  # .sort Ordena los ítems dela lista
 
     if len(datos) % 2 == 0:
         n = len(datos)
@@ -62,7 +59,7 @@ def media(datos):
     else:
         mediana = datos[int(len(datos) / 2)]
 
-    imprimir ('Media: ', mediana)
+    imprimir('Media: ', mediana)
 
 
 class Elastic(object):
@@ -84,15 +81,14 @@ class Elastic(object):
         self._doc_type = 'object'  # object y nested
         self._URL = "http://127.0.0.1:8080"
 
-
     def process_hits_update_dangerous_files(self, hits: Dict, list_median: List) -> List:
         print(len(list_median))
         self._logger.info(f"Got {len(hits)} files")
         for hit in hits:
             da = datetime.strptime(hit['_source']['starttime'], '%Y-%m-%d %H:%M:%S')
             db = datetime.strptime(hit['_source']['endtime'], '%Y-%m-%d %H:%M:%S')
-            result = int((db-da).total_seconds())
-            if result > 0 and result <= 180:
+            result = int((db - da).total_seconds())
+            if 0 < result <= 180:
                 list_median.append(result)
             if result > 3000:
                 self._logger.info(result)
@@ -100,7 +96,6 @@ class Elastic(object):
                 self._logger.info(hit['_source']['endtime'])
 
         return list_median
-            
 
     def update_dangerous_files(self) -> NoReturn:
         """
@@ -138,9 +133,9 @@ class Elastic(object):
             # Get the number of results that returned in the last scroll
             scroll_size = len(response['hits']['hits'])
 
-        #promedio(list_median)
-        #moda(list_median)
-        #media(list_median)
+        # promedio(list_median)
+        # moda(list_median)
+        # media(list_median)
         self._logger.info(f"Moda: {stats.mode(list_median)}")
         self._logger.info(f"Media: {numpy.mean(list_median)}")
         self._logger.info(f"Mediana: {numpy.median(list_median)}")
@@ -151,8 +146,7 @@ if __name__ == '__main__':
 
     logger = functions.get_logger(True, 'elk')
     e = Elastic("127.0.0.1", logger)
-    e.update_dangerous_files() 
-
+    e.update_dangerous_files()
 
     endTotal = timer()
     logger.debug('Tiempo total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38
