@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import logging
 from http import HTTPStatus  # https://docs.python.org/3/library/http.html
 from timeit import default_timer as timer
 from typing import NoReturn, Dict, Union
@@ -46,7 +47,7 @@ def _malware_download_url(url_download: str) -> Union[str, None]:
 
 
 class Elastic(object):
-    def __init__(self, ip, logger) -> None:
+    def __init__(self, ip, logger: logging) -> None:
         self._es = Elasticsearch(
             [ip],
             # http_auth=('user', 'secret'),

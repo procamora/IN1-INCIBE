@@ -85,7 +85,7 @@ class Parser(object):
             # self._logger.debug('Time file: {}'.format(end - start))  # Time in seconds
 
         end_total = timer()
-        self._logger.info('Time total: {} seg'.format(end_total - start_total))  # Time in seconds, e.g. 5.38091952400282
+        self._logger.info('Time total: {} seg'.format(end_total - start_total))  # Time in seconds, e.g. 5.38091952400
         self._geoip2_db.close()
 
     @staticmethod
@@ -136,7 +136,8 @@ class Parser(object):
                 valid = False
 
             # Avanzamos las lineas necesarias hasta tener una linea con la ip de la conexion
-            while valid and not re.match(r'.*,\d+,{}'.format(connection_aux_dict[connection].get_ip()), s, re.IGNORECASE):
+            while valid and not re.match(r'.*,\d+,{}'.format(connection_aux_dict[connection].get_ip()), s,
+                                         re.IGNORECASE):
                 cont += 1
                 if cont < file_size:
                     s = file[cont]
@@ -191,9 +192,9 @@ class Parser(object):
         self.update_command_connection(new_connection_dict)
 
         for conect in new_connection_dict.values():
-            if conect.isCompleted():
+            if conect.is_completed():
                 write_file(conect.get_json(), self._log_completed, 'a')
-            elif conect.isSession():
+            elif conect.is_session():
                 write_file(conect.get_json(), self._log_aux_session, 'a')
             else:
                 write_file(conect.get_json(), self._log_aux_no_session, 'a')

@@ -47,7 +47,7 @@ class CompleteSession(object):
         for line_no_session in self._lines_no_session:
             line_no_session_json = json.loads(line_no_session)
             if len(line_no_session) > 2 and line_session_json['idip'] == line_no_session_json['idip']:
-                a = NewConnection.fromJson(line_session_json, line_no_session_json)
+                a = NewConnection.from_json(line_session_json, line_no_session_json)
                 self._output_json += a.get_json()
                 self._lines_no_session.remove(line_no_session)  # Elimino la linea usada mejorado la eficiencia
                 return True

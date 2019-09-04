@@ -4,6 +4,7 @@
 import argparse
 import configparser
 import json
+import logging
 import re
 import sys
 from http import HTTPStatus  # https://docs.python.org/3/library/http.html
@@ -22,7 +23,7 @@ TIMEOUT = 600
 
 
 class Elastic(object):
-    def __init__(self, ip, logger) -> None:
+    def __init__(self, ip: str, logger: logging) -> None:
         self._es = Elasticsearch(
             [ip],
             # http_auth=('user', 'secret'),

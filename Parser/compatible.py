@@ -53,7 +53,7 @@ class Compatible(object):
                     write_file(output, self._outputJson, 'a')
                     output = str()
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
-                    n = NewConnection.fromJson(json.loads(lineSession), json.loads('{}'), False)
+                    n = NewConnection.from_json(json.loads(lineSession), json.loads('{}'), False)
                     output = '{}{}'.format(output, n.get_json_cowrie(self._logger, self._dict_reputation_ip))
             self._logger.debug('{}/{}'.format(count_lines, count_lines))
         # imprimo las ultimas lineas
