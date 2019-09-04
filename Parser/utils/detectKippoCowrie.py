@@ -30,12 +30,12 @@ VERBOSE = True
 ERROR = -1
 
 
-def get_ssh_banner(bannerFromServer):
+def get_ssh_banner(banner_from_server):
     """
     This function receives the banner of the SSH server. It returns true if
     the server advertises itself as OpenSSH.
     """
-    banner = bannerFromServer.decode('utf-8').strip()
+    banner = banner_from_server.decode('utf-8').strip()
 
     if banner in DEFAULT_KIPPOCOWRIE_BANNERS:
         print("[!] Heads up: the banner of this server is on Kippo/Cowrie's default list. May be promising...")
