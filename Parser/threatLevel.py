@@ -19,7 +19,8 @@ class ThreatLevel(object):
                          'rm', 'sh', 'bash', 'busybox', 'reSuSEfirewall', 'SuSEfirewall', 'killall',
                          'kill', 'pkill', 'sleep', 'sudo', 'nohup', 'poweroff', 'reboot', 'halt', 'exec']
 
-    def check_argument(self) -> int:
+    @staticmethod
+    def check_argument() -> int:
         # echo -ne
         # history -c
         #

@@ -159,8 +159,8 @@ def malware_get_reputation_ip(ip: str, loggers: logging) -> int:
     :param loggers:
     :return:
     """
-    URL = "http://127.0.0.1:8080"
-    url = f'{URL}/getReputationIp?ip={ip}'
+    url_api = "http://127.0.0.1:8080"
+    url = f'{url_api}/getReputationIp?ip={ip}'
     headers = {'Accept': 'application/json'}
     try:
         r = requests.get(url, headers=headers, timeout=5)

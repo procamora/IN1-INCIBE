@@ -24,26 +24,26 @@ class TableClients(Table):
         self._encryption: str = self._DEFAULT_VALUE
         self._authentication: str = self._DEFAULT_VALUE
 
-    def load(self, version, shortName) -> NoReturn:
+    def load(self, version, short_name) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla
 
         :param version:
-        :param shortName:
+        :param short_name:
         :return:
         """
         if len(version) > 0 and version != self._DEFAULT_VALUE:
             self._version = version
-        if len(shortName) > 0 and shortName != self._DEFAULT_VALUE:
-            self._short_name = shortName
+        if len(short_name) > 0 and short_name != self._DEFAULT_VALUE:
+            self._short_name = short_name
 
-    def set_kex_alg(self, kexAlg) -> NoReturn:
-        if len(kexAlg) > 0 and kexAlg != self._DEFAULT_VALUE:
-            self._kex_alg = kexAlg
+    def set_kex_alg(self, kex_alg) -> NoReturn:
+        if len(kex_alg) > 0 and kex_alg != self._DEFAULT_VALUE:
+            self._kex_alg = kex_alg
 
-    def set_key_alg(self, keyAlg) -> NoReturn:
-        if len(keyAlg) > 0 and keyAlg != self._DEFAULT_VALUE:
-            self._key_alg = keyAlg
+    def set_key_alg(self, key_alg) -> NoReturn:
+        if len(key_alg) > 0 and key_alg != self._DEFAULT_VALUE:
+            self._key_alg = key_alg
 
     def set_encryption(self, encryption) -> NoReturn:
         if len(encryption) > 0 and encryption != self._DEFAULT_VALUE:
@@ -59,8 +59,8 @@ class TableClients(Table):
 
         :return:
         """
-        return {'version': self._version, 'shortName': self._short_name, 'kexAlg': self._kex_alg, 'keyAlg': self._key_alg,
-                'encryption': self._encryption, 'authentication': self._authentication,
+        return {'version': self._version, 'shortName': self._short_name, 'kexAlg': self._kex_alg,
+                'keyAlg': self._key_alg, 'encryption': self._encryption, 'authentication': self._authentication,
                 'eventid': 'cowrie.client.version'}
 
     def is_valid(self) -> bool:

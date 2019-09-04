@@ -35,7 +35,7 @@ def convert(directory) -> NoReturn:
         num_days = int(re.search(r'\.log.(\d+)', fname).group(1))  # obtengo el numero del log
         my_date = (date + datetime.timedelta(days=num_days)).strftime(
             '%Y-%m-%d')  # a la fecha base le sumo el numero de log
-        name = re.sub(r'.log.\d+', r'.log.{}'.format(my_date), fname)  # obtengo el nombre con el numero formato de fecha
+        name = re.sub(r'.log.\d+', r'.log.{}'.format(my_date), fname)  # obtengo el nombre con el numero formato d fecha
 
         egrep = 'egrep -v "telnet|CowrieTelnetTransport" {} > {}'.format(fname, name)
         # print(egrep)

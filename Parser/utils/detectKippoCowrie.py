@@ -30,7 +30,7 @@ VERBOSE = True
 ERROR = -1
 
 
-def getSSHBanner(bannerFromServer):
+def get_ssh_banner(bannerFromServer):
     """
     This function receives the banner of the SSH server. It returns true if
     the server advertises itself as OpenSSH.
@@ -43,7 +43,7 @@ def getSSHBanner(bannerFromServer):
     return DEFAULT_BANNER in banner
 
 
-def connectToSSH(host, port):
+def connect_to_ssh(host, port):
     try:
         socket.setdefaulttimeout(5)
         sockfd = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -51,7 +51,7 @@ def connectToSSH(host, port):
 
         banner = sockfd.recv(1024)
 
-        if getSSHBanner(banner):
+        if get_ssh_banner(banner):
             if VERBOSE:
                 print("[+] %s:%d advertised itself as OpenSSH. Continuing..." % (host, port))
             else:
@@ -65,7 +65,7 @@ def connectToSSH(host, port):
     return sockfd
 
 
-def probeBadVersion(sockfd):
+def probe_bad_version(sockfd):
     try:
         sockfd.sendall('SSH-1337\n'.encode('utf-8'))
     except Exception as err:
@@ -86,7 +86,7 @@ def probeBadVersion(sockfd):
 
 
 # this probe works against Cowrie, but also some misconfigured versions of OpenSSH 5.3
-def probeSpacerPacketCorrupt(sockfd):
+def probe_spacer_packet_corrupt(sockfd):
     try:
         sockfd.sendall("SSH-2.0-OpenSSH\n\n\n\n\n\n\n\n\n\n".encode('utf-8'))
     except Exception as err:
@@ -103,7 +103,7 @@ def probeSpacerPacketCorrupt(sockfd):
             return False
 
 
-def probeDoubleBanner(sockfd):
+def probe_double_banner(sockfd):
     try:
         sockfd.sendall("SSH-2.0-OpenSSH_6.0p1 Debian-4+deb7u2\nSSH-2.0-OpenSSH_6.0p1 Debian-4+deb7u2\n".encode('utf-8'))
     except Exception as err:
@@ -120,34 +120,34 @@ def probeDoubleBanner(sockfd):
         return False
 
 
-def detectKippoCowrie(host, port):
+def detect_kippo_cowrie(host, port):
     score = 0
 
     print("[+] Detecting Kippo/Cowrie technique #1 - bad version")
-    sockfd = connectToSSH(host, port)
+    sockfd = connect_to_ssh(host, port)
 
     if sockfd:
-        if probeBadVersion(sockfd):
+        if probe_bad_version(sockfd):
             score += 1
     else:
         print("Socket error in probe #1")
         sys.exit(ERROR)
 
     print("[+] Detecting Kippo/Cowrie technique #2 - spacer")
-    sockfd = connectToSSH(host, port)
+    sockfd = connect_to_ssh(host, port)
 
     if sockfd:
-        if probeSpacerPacketCorrupt(sockfd):
+        if probe_spacer_packet_corrupt(sockfd):
             score += 1
     else:
         print("Socket error in probe #2")
         sys.exit(ERROR)
 
     print("[+] Detecting Kippo/Cowrie technique #3 - double banner")
-    sockfd = connectToSSH(host, port)
+    sockfd = connect_to_ssh(host, port)
 
     if sockfd:
-        if probeDoubleBanner(sockfd):
+        if probe_double_banner(sockfd):
             score += 1
     else:
         print("Socket error in probe #3")
@@ -164,7 +164,7 @@ def main():
         print('Argument incorrect')
         return
 
-    score = detectKippoCowrie(host, port)
+    score = detect_kippo_cowrie(host, port)
 
     print("\t\t\t[+] Detection score for %s on port %d: %d" % (host, port, score))
 
