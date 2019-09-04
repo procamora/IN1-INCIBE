@@ -49,7 +49,7 @@ class TableTtylog(Table):
         """
         return {'ttylog': self._ttylog, 'size': self._size, 'eventid': 'cowrie.log.closed'}
 
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

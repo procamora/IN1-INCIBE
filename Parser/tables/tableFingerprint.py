@@ -20,7 +20,7 @@ class TableFingerprint(Table):
         super().__init__()
         self._fingerprint: str = str()
 
-    def setFingerprint(self, fingerprint) -> NoReturn:
+    def set_fingerprint(self, fingerprint) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla
 
@@ -38,7 +38,7 @@ class TableFingerprint(Table):
         """
         return {'fingerprint': self._fingerprint, 'eventid': 'cowrie.client.fingerprint'}
 
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

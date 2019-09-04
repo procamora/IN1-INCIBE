@@ -39,7 +39,7 @@ class TableDownloads(Table):
         return {'timestamp': self._timestamp, 'url': self._url, 'outfile': self._outfile,
                 'shasum': self._shasum, 'dangerous': self._dangerous, 'eventid': 'cowrie.session.file_download'}
 
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

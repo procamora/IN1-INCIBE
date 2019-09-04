@@ -48,7 +48,7 @@ class TableAuth(Table):
                 'timestamp': self._timestamp, 'credentials': '{}/{}'.format(self._username, self._password),
                 'eventid': 'cowrie.login'}
 
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

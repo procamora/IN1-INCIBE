@@ -16,22 +16,22 @@ class TableGeoIp(Table):
     Clase que contiene los campos de la tabla ipinfo
     """
 
-    def __init__(self, geoip2DB: geoip2) -> NoReturn:
+    def __init__(self, geoip2_db: geoip2) -> NoReturn:
         """
         Constructor de clase
         """
         super().__init__()
-        self._geoip2DB: geoip2 = geoip2DB
+        self._geoip2_db: geoip2 = geoip2_db
         self._ip: str = str()
-        self._continentName: str = self._DEFAULT_VALUE
-        self._continentCode: str = self._DEFAULT_VALUE
-        self._countryName: str = self._DEFAULT_VALUE
-        self._countryCode: str = self._DEFAULT_VALUE
-        self._cityName: str = self._DEFAULT_VALUE
-        self._postalCode: str = self._DEFAULT_VALUE
+        self._continent_name: str = self._DEFAULT_VALUE
+        self._continent_code: str = self._DEFAULT_VALUE
+        self._country_name: str = self._DEFAULT_VALUE
+        self._country_code: str = self._DEFAULT_VALUE
+        self._city_name: str = self._DEFAULT_VALUE
+        self._postal_code: str = self._DEFAULT_VALUE
         self._location: str = '0,0'
 
-    def setIp(self, ip: str) -> NoReturn:
+    def set_ip(self, ip: str) -> NoReturn:
         """
         Metedo establece la ip y obtiene la informacion geografica
 
@@ -40,48 +40,48 @@ class TableGeoIp(Table):
         """
         if len(ip) > 0:
             self._ip = ip
-            self.loadGeoIp()
+            self.load_geo_ip()
 
-    def loadGeoIp(self) -> NoReturn:
+    def load_geo_ip(self) -> NoReturn:
         """
         Metodo que obtiene de la base de datos toda la informacion geografica de la ip
 
         :return:
         """
 
-        if self._geoip2DB is None:  # Este caso solo se da cuando se carga la clase desde un json y se tiene esta info
+        if self._geoip2_db is None:  # Este caso solo se da cuando se carga la clase desde un json y se tiene esta info
             return
 
         try:
-            response = self._geoip2DB.city(self._ip)
+            response = self._geoip2_db.city(self._ip)
         except geoip2.errors.AddressNotFoundError:
             return None
 
         if response.continent.name:
-            self._continentName = response.continent.name
+            self._continent_name = response.continent.name
         if response.continent.code:
-            self._continentCode = response.continent.code
+            self._continent_code = response.continent.code
         if response.country.name:
-            self._countryName = response.country.name
+            self._country_name = response.country.name
         if response.country.iso_code:
-            self._countryCode = response.country.iso_code
+            self._country_code = response.country.iso_code
         if response.city.name:
-            self._cityName = response.city.name
+            self._city_name = response.city.name
         if response.postal.code:
-            self._postalCode = response.postal.code
+            self._postal_code = response.postal.code
 
         if response.location.latitude is not None and response.location.longitude is not None:
             self._location = '{lat},{lon}'.format(lat=response.location.latitude, lon=response.location.longitude)
 
-    def loadGeoIpExtended(self, continentName: str, continentCode: str, countryName: str, countryCode: str,
-                          cityName: str, postalCode: str, location: str) -> NoReturn:
-        if len(continentName) > 0:
-            self._continentName = continentName
-            self._continentCode = continentCode
-            self._countryName = countryName
-            self._countryCode = countryCode
-            self._cityName = cityName
-            self._postalCode = postalCode
+    def load_geo_ip_extended(self, continent_name: str, continent_code: str, country_name: str, country_code: str,
+                             city_name: str, postal_code: str, location: str) -> NoReturn:
+        if len(continent_name) > 0:
+            self._continent_name = continent_name
+            self._continent_code = continent_code
+            self._country_name = country_name
+            self._country_code = country_code
+            self._city_name = city_name
+            self._postal_code = postal_code
             self._location = location
 
     def __getstate__(self) -> Dict[str, Any]:
@@ -91,11 +91,11 @@ class TableGeoIp(Table):
         :return:
         """
 
-        return {'ip': self._ip, 'continentName': self._continentName, 'continentCode': self._continentCode,
-                'countryName': self._countryName, 'countryCode': self._countryCode, 'cityName': self._cityName,
-                'postalCode': self._postalCode, 'location': self._location, 'eventid': 'cowrie.session.geoip'}
+        return {'ip': self._ip, 'continentName': self._continent_name, 'continentCode': self._continent_code,
+                'countryName': self._country_name, 'countryCode': self._country_code, 'cityName': self._city_name,
+                'postalCode': self._postal_code, 'location': self._location, 'eventid': 'cowrie.session.geoip'}
 
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

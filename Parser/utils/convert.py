@@ -10,21 +10,21 @@ import re
 from typing import NoReturn
 
 
-def CreateArgParser() -> argparse:
+def create_arg_parser() -> argparse:
     """
     Metodo para establecer los argumentos que necesita la clase
 
     :return:
     """
     example = 'python3 %(prog)s -d scriptzteam'
-    myParser = argparse.ArgumentParser(
+    my_parser = argparse.ArgumentParser(
         description='%(prog)s is a script to convert old records to records compatible with the Parser',
         usage='{}'.format(example))
 
-    requiredNamed = myParser.add_argument_group('required named arguments')
-    requiredNamed.add_argument('-d', '--dir', required=True, help='Directory where the logs are located.')
+    required_named = my_parser.add_argument_group('required named arguments')
+    required_named.add_argument('-d', '--dir', required=True, help='Directory where the logs are located.')
 
-    return myParser.parse_args()
+    return my_parser.parse_args()
 
 
 def convert(directory) -> NoReturn:
@@ -32,10 +32,10 @@ def convert(directory) -> NoReturn:
     date = datetime.datetime(2009, 11, 7)
 
     for fname in sorted(glob.glob(files)):
-        numDays = int(re.search(r'\.log.(\d+)', fname).group(1))  # obtengo el numero del log
-        myDate = (date + datetime.timedelta(days=numDays)).strftime(
+        num_days = int(re.search(r'\.log.(\d+)', fname).group(1))  # obtengo el numero del log
+        my_date = (date + datetime.timedelta(days=num_days)).strftime(
             '%Y-%m-%d')  # a la fecha base le sumo el numero de log
-        name = re.sub(r'.log.\d+', r'.log.{}'.format(myDate), fname)  # obtengo el nombre con el numero formato de fecha
+        name = re.sub(r'.log.\d+', r'.log.{}'.format(my_date), fname)  # obtengo el nombre con el numero formato de fecha
 
         egrep = 'egrep -v "telnet|CowrieTelnetTransport" {} > {}'.format(fname, name)
         # print(egrep)
@@ -56,5 +56,5 @@ def convert(directory) -> NoReturn:
 
 
 if __name__ == '__main__':
-    arg = CreateArgParser()
+    arg = create_arg_parser()
     convert(arg.dir)

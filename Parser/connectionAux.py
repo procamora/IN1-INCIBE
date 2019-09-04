@@ -22,7 +22,7 @@ class ConnectionAux(object):
         self._session = session
         self._starttime = starttime
 
-    def getIp(self) -> str:
+    def get_ip(self) -> str:
         """
         Metodo para obtener la ip de la conexion
 
@@ -30,7 +30,7 @@ class ConnectionAux(object):
         """
         return self._ip
 
-    def getId(self) -> str:
+    def get_id(self) -> str:
         """
         Metodo que rotorna el id,ip de la conexion
 
@@ -38,7 +38,7 @@ class ConnectionAux(object):
         """
         return "{},{}".format(self._pid, self._ip)
 
-    def setId(self, pid: str) -> NoReturn:
+    def set_id(self, pid: str) -> NoReturn:
         """
         Metodo para establecer el id de la conexion
 
@@ -47,7 +47,7 @@ class ConnectionAux(object):
         """
         self._pid = pid
 
-    def getSession(self) -> str:
+    def get_session(self) -> str:
         """
         Metodo para obtener la session de la conexion
 
@@ -55,7 +55,7 @@ class ConnectionAux(object):
         """
         return self._session
 
-    def getStarttime(self) -> str:
+    def get_starttime(self) -> str:
         """
         Metodo para obtener la fecha y hora en la que se establece la conexion
 
@@ -63,10 +63,10 @@ class ConnectionAux(object):
         """
         return self._starttime
 
-    def toString(self) -> str:
+    def to_string(self) -> str:
         """
         Metodo para imprimir el valor de los atributos de la clase
 
         :return:
         """
-        return "{} -> {}".format(self.getId(), self._session)
+        return "{} -> {}".format(self.get_id(), self._session)

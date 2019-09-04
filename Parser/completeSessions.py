@@ -48,7 +48,7 @@ class CompleteSession(object):
             line_no_session_json = json.loads(line_no_session)
             if len(line_no_session) > 2 and line_session_json['idip'] == line_no_session_json['idip']:
                 a = NewConnection.fromJson(line_session_json, line_no_session_json)
-                self._output_json += a.getJSON()
+                self._output_json += a.get_json()
                 self._lines_no_session.remove(line_no_session)  # Elimino la linea usada mejorado la eficiencia
                 return True
         return False
@@ -61,7 +61,7 @@ class CompleteSession(object):
         """
         write_file(self._output_json, self._file_session_output, 'a')
 
-    def writeLogNoSession(self) -> NoReturn:
+    def write_log_no_session(self) -> NoReturn:
         """
         Metodo que crea un fichero auxiliar con la informacion geografica de las ip's de las sesiones que no han
         sido capaz de recuperarse
@@ -86,23 +86,23 @@ class CompleteSession(object):
 
         :return:
         """
-        startTotal = timer()
+        start_total = timer()
 
         with open(self._file_session, 'r') as f:
-            totalLines = f.readlines()
-            count_lines = len(totalLines)
-            for num, lineSession in enumerate(totalLines):
+            total_lines = f.readlines()
+            count_lines = len(total_lines)
+            for num, lineSession in enumerate(total_lines):
                 if num % 500 == 0:  # imprimimos cada 500 lineas
                     self._logger.debug('{}/{}'.format(num, count_lines))
                 if len(lineSession) > 2:  # Evitamos lineas en blanco (\n)
-                    lineSessionJson = json.loads(lineSession)
-                    utilizado = self.search(lineSessionJson)
+                    line_session_json = json.loads(lineSession)
+                    utilizado = self.search(line_session_json)
                     if not utilizado:
-                        self._json_non_trated.append(lineSessionJson)
+                        self._json_non_trated.append(line_session_json)
             self._logger.debug('{}/{}'.format(count_lines, count_lines))
 
         self.write_log_session()
-        self.writeLogNoSession()
+        self.write_log_no_session()
 
-        endTotal = timer()
-        self._logger.info('Time total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.3802
+        end_total = timer()
+        self._logger.info('Time total: {} seg'.format(end_total - start_total))  # Time in seconds, e.g. 5.3802

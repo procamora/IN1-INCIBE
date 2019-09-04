@@ -14,7 +14,7 @@ class Table(ABC, json.JSONEncoder):
     def __init__(self) -> NoReturn:
         self._DEFAULT_VALUE = 'unknown'
 
-    def toJSON(self) -> Dict[str, Any]:
+    def to_json(self) -> Dict[str, Any]:
         """
         Metodo que generar un string con la serializacion de la clase en formato JSON
 
@@ -32,7 +32,7 @@ class Table(ABC, json.JSONEncoder):
         """
 
     @abstractmethod
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

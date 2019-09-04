@@ -31,8 +31,8 @@ class NewConnection(json.JSONEncoder):
         :param logger:
         :param geoip2DB:
         """
-        self._IdSession = connectionAux.getSession()
-        self._idip = connectionAux.getId()
+        self._IdSession = connectionAux.get_session()
+        self._idip = connectionAux.get_id()
         self._threatLevel = int()  # Leve 1 Media 2 Alta 3
         self._isScanPort = bool()
         self._isBruteForceAttack = bool()
@@ -54,8 +54,8 @@ class NewConnection(json.JSONEncoder):
         self._listDownloads = list()
 
         # Establecemos algunos valores de session
-        self._session.load(self._connectionAux.getStarttime(), self._connectionAux.getIp())
-        self._geoip.setIp(self._connectionAux.getIp())
+        self._session.load(self._connectionAux.get_starttime(), self._connectionAux.get_ip())
+        self._geoip.set_ip(self._connectionAux.get_ip())
 
     def getId(self) -> str:
         """
@@ -63,9 +63,9 @@ class NewConnection(json.JSONEncoder):
 
         :return:
         """
-        return self._connectionAux.getId()
+        return self._connectionAux.get_id()
 
-    def checkCommandPending(self, command: Download) -> bool:
+    def check_command_pending(self, command: Download) -> bool:
         """
         Metodo que retorna True si el comando wget que recibe esta pendiente de comprobar, si esta pendiente lo borra
         de la lista de comandos pendientes y lo añade a la lista de descargas
@@ -77,16 +77,16 @@ class NewConnection(json.JSONEncoder):
             return False
 
         for i in self._listCommandPending:
-            if command.getUrl() == i:
+            if command.get_url() == i:
                 # print("EXITO")
-                d = TableDownloads(command.getTimestamp(), command.getUrl(), command.getPath(), command.getHash())
+                d = TableDownloads(command.get_timestamp(), command.get_url(), command.get_path(), command.get_hash())
                 self._listDownloads.append(d)
                 self._listCommandPending.remove(i)
                 return True
 
         return False
 
-    def addLine(self, line: str) -> bool:
+    def add_line(self, line: str) -> bool:
         """
         Metodo para analizar una linea, comprueba si la linea coincide con alguna de las regex, si coincide guardara esa
         informacion en la tabla asociada a esa informacion
@@ -116,14 +116,14 @@ class NewConnection(json.JSONEncoder):
         regex = r'^.*kex alg, key alg: b?\'(.*)\' b?\'(.*)\'$'
         if re.match(regex, line):
             key = re.search(regex, line)
-            self._client.setKexAlg(key.group(1))
-            self._client.setKeyAlg(key.group(2))
+            self._client.set_kex_alg(key.group(1))
+            self._client.set_key_alg(key.group(2))
 
         regex = r'^.*incoming: b?\'(.*)\' b?\'(.*)\' b?\'(.*)\'.*$'
         if re.match(regex, line):
             key = re.search(regex, line)
-            self._client.setEncryption(key.group(1))
-            self._client.setAuthentication(key.group(2))
+            self._client.set_encryption(key.group(1))
+            self._client.set_authentication(key.group(2))
 
         # UPDATE TTYLOG
         regex = r'.*Closing TTY Log: (.*) after \d+ \w+'
@@ -191,12 +191,12 @@ class NewConnection(json.JSONEncoder):
         regex = r'.*fingerprint:? ((\w{2}:?){16}).*'
         if re.match(regex, line):
             # user = re.search(r'.*user b\'(\w+)\'.*', line).group(1)  # Esta en alguna version
-            self._fingerprint.setFingerprint(re.search(regex, line).group(1))
+            self._fingerprint.set_fingerprint(re.search(regex, line).group(1))
             return True
 
         return False
 
-    def updateAtributes(self) -> NoReturn:
+    def update_atributes(self) -> NoReturn:
         """
         Metodo para actualizar los atributos de clasificacion de la sesion
         Comprobamos si la sesion es un scaneo o un ataque de fuerza bruta
@@ -213,7 +213,7 @@ class NewConnection(json.JSONEncoder):
         else:
             self._isBruteForceAttack = False
 
-    def getJSON(self) -> str:
+    def get_json(self) -> str:
         """
         Metodo para obtener un string con toda la informacion de la conexion en formato JSON
 
@@ -224,7 +224,7 @@ class NewConnection(json.JSONEncoder):
         threatLevel = ThreatLevel()
         self._threatLevel = threatLevel.get_threat_level(self._listInputs)
 
-        self.updateAtributes()
+        self.update_atributes()
 
         # Creo un diccionario solo con los valores que necesito y elimminando el _ de las variables privadas
         myDict = dict()
@@ -235,7 +235,7 @@ class NewConnection(json.JSONEncoder):
 
         return '{}\n'.format(json.dumps(myDict, cls=ObjectEncoder))
 
-    def getJSONCowrie(self, logger: logging, dict_reputation_ip: dict) -> str:
+    def get_json_cowrie(self, logger: logging, dict_reputation_ip: dict) -> str:
         """
         Metodo para obtener un string con toda la informacion de la conexion en formato JSON
 
@@ -245,7 +245,7 @@ class NewConnection(json.JSONEncoder):
         threatLevel = ThreatLevel()
         self._threatLevel = threatLevel.get_threat_level(self._listInputs)
 
-        self.updateAtributes()
+        self.update_atributes()
 
         # Creo un diccionario solo con los valores que necesito y elimminando el _ de las variables privadas
         myDict = dict()
@@ -261,14 +261,14 @@ class NewConnection(json.JSONEncoder):
             if isinstance(myDict[i], Table):
                 if isinstance(myDict[i], TableSessions) and len(myDict[i].get_endtime()) == 0:
                     myDict[i].set_endtime(myDict[i].get_starttime())
-                jsonTable = myDict[i].toJSON()
+                jsonTable = myDict[i].to_json()
                 jsonUpdate = json.loads(jsonTable)
                 jsonUpdate['session'] = self._IdSession
                 myJson = "{}\n{}".format(myJson, json.dumps(jsonUpdate))
             # Si es una lista de tablas para cada una le añade la sesion y para comandos añade el binario
             elif isinstance(myDict[i], list):
                 for j in myDict[i]:
-                    jsonTable = j.toJSON()
+                    jsonTable = j.to_json()
                     jsonUpdate = json.loads(jsonTable)
                     jsonUpdate['session'] = self._IdSession
                     if isinstance(j, TableInput):
@@ -286,12 +286,12 @@ class NewConnection(json.JSONEncoder):
         jsonUpdate['session'] = self._IdSession
 
         # primero miramos si la tenemos en el diccionario para evitar peticcion http
-        if self._connectionAux.getIp() in dict_reputation_ip:
-            jsonUpdate['reputation'] = dict_reputation_ip[self._connectionAux.getIp()]
+        if self._connectionAux.get_ip() in dict_reputation_ip:
+            jsonUpdate['reputation'] = dict_reputation_ip[self._connectionAux.get_ip()]
         else:
-            reput = malware_get_reputation_ip(self._connectionAux.getIp(), logger)
+            reput = malware_get_reputation_ip(self._connectionAux.get_ip(), logger)
             jsonUpdate['reputation'] = reput
-            dict_reputation_ip[self._connectionAux.getIp()] = reput
+            dict_reputation_ip[self._connectionAux.get_ip()] = reput
 
         jsonUpdate['isScanPort'] = jsonUpdate['isScanPort'].lower()  # elasticsearch usa booleanos en minusculas
         jsonUpdate['isBruteForceAttack'] = jsonUpdate['isBruteForceAttack'].lower()
@@ -303,10 +303,10 @@ class NewConnection(json.JSONEncoder):
 
     def loadClient(self, stringJson: dict) -> NoReturn:
         self._client.load(stringJson['version'], stringJson['shortName'])
-        self._client.setKeyAlg(stringJson['keyAlg'])
-        self._client.setKexAlg(stringJson['kexAlg'])
-        self._client.setEncryption(stringJson['encryption'])
-        self._client.setAuthentication(stringJson['authentication'])
+        self._client.set_key_alg(stringJson['keyAlg'])
+        self._client.set_kex_alg(stringJson['kexAlg'])
+        self._client.set_encryption(stringJson['encryption'])
+        self._client.set_authentication(stringJson['authentication'])
 
     def loadTtylog(self, stringJson: dict) -> NoReturn:
         self._ttylog.set_ttylog(stringJson['ttylog'])
@@ -318,12 +318,12 @@ class NewConnection(json.JSONEncoder):
         self._session.set_termsize(stringJson['termsize'])
 
     def loadGeoIp(self, stringJson: dict) -> NoReturn:
-        self._geoip.loadGeoIpExtended(stringJson['continentName'], stringJson['continentCode'],
-                                      stringJson['countryName'], stringJson['countryCode'], stringJson['cityName'],
-                                      stringJson['postalCode'], stringJson['location'])
+        self._geoip.load_geo_ip_extended(stringJson['continentName'], stringJson['continentCode'],
+                                         stringJson['countryName'], stringJson['countryCode'], stringJson['cityName'],
+                                         stringJson['postalCode'], stringJson['location'])
 
     def loadFingerprint(self, stringJson: dict) -> NoReturn:
-        self._fingerprint.setFingerprint(stringJson['fingerprint'])
+        self._fingerprint.set_fingerprint(stringJson['fingerprint'])
 
     def loadInput(self, stringJson: dict) -> NoReturn:
         t = TableInput()
@@ -392,7 +392,7 @@ class NewConnection(json.JSONEncoder):
     @staticmethod
     def fromJson(jsonSession: dict, jsonNoSession: dict, simple: bool = True) -> NewConnection:
         aux = ConnectionAux(jsonSession['session']['ip'], jsonSession['IdSession'], jsonSession['session']['starttime'])
-        aux.setId(jsonSession['idip'].split(',')[0])
+        aux.set_id(jsonSession['idip'].split(',')[0])
         nCon = NewConnection(aux, False, None)
 
         for i in jsonSession:

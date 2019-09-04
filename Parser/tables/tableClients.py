@@ -18,9 +18,9 @@ class TableClients(Table):
         """
         super().__init__()
         self._version: str = self._DEFAULT_VALUE
-        self._shortName: str = self._DEFAULT_VALUE
-        self._kexAlg: str = self._DEFAULT_VALUE
-        self._keyAlg: str = self._DEFAULT_VALUE
+        self._short_name: str = self._DEFAULT_VALUE
+        self._kex_alg: str = self._DEFAULT_VALUE
+        self._key_alg: str = self._DEFAULT_VALUE
         self._encryption: str = self._DEFAULT_VALUE
         self._authentication: str = self._DEFAULT_VALUE
 
@@ -35,21 +35,21 @@ class TableClients(Table):
         if len(version) > 0 and version != self._DEFAULT_VALUE:
             self._version = version
         if len(shortName) > 0 and shortName != self._DEFAULT_VALUE:
-            self._shortName = shortName
+            self._short_name = shortName
 
-    def setKexAlg(self, kexAlg) -> NoReturn:
+    def set_kex_alg(self, kexAlg) -> NoReturn:
         if len(kexAlg) > 0 and kexAlg != self._DEFAULT_VALUE:
-            self._kexAlg = kexAlg
+            self._kex_alg = kexAlg
 
-    def setKeyAlg(self, keyAlg) -> NoReturn:
+    def set_key_alg(self, keyAlg) -> NoReturn:
         if len(keyAlg) > 0 and keyAlg != self._DEFAULT_VALUE:
-            self._keyAlg = keyAlg
+            self._key_alg = keyAlg
 
-    def setEncryption(self, encryption) -> NoReturn:
+    def set_encryption(self, encryption) -> NoReturn:
         if len(encryption) > 0 and encryption != self._DEFAULT_VALUE:
             self._encryption = encryption
 
-    def setAuthentication(self, authentication) -> NoReturn:
+    def set_authentication(self, authentication) -> NoReturn:
         if len(authentication) > 0:
             self._authentication = authentication
 
@@ -59,11 +59,11 @@ class TableClients(Table):
 
         :return:
         """
-        return {'version': self._version, 'shortName': self._shortName, 'kexAlg': self._kexAlg, 'keyAlg': self._keyAlg,
+        return {'version': self._version, 'shortName': self._short_name, 'kexAlg': self._kex_alg, 'keyAlg': self._key_alg,
                 'encryption': self._encryption, 'authentication': self._authentication,
                 'eventid': 'cowrie.client.version'}
 
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios

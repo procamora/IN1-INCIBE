@@ -23,7 +23,7 @@ class Download(object):
         self._path = path
         self._timestamp = timestamp
 
-    def getUrl(self) -> str:
+    def get_url(self) -> str:
         """
         Metodo para obtener la url donde se encuentra el fichero
 
@@ -31,7 +31,7 @@ class Download(object):
         """
         return self._url
 
-    def getHash(self) -> str:
+    def get_hash(self) -> str:
         """
         Metodo para obtener el hash del fichero
 
@@ -39,7 +39,7 @@ class Download(object):
         """
         return self._hash
 
-    def getPath(self) -> str:
+    def get_path(self) -> str:
         """
         Metodo para obtener la ruta donde esta guardado el fichero
 
@@ -47,7 +47,7 @@ class Download(object):
         """
         return self._path
 
-    def getTimestamp(self) -> str:
+    def get_timestamp(self) -> str:
         """
         Metodo para obtener el tiemstamp de la descarga del fichero
 
@@ -55,7 +55,7 @@ class Download(object):
         """
         return self._timestamp
 
-    def toString(self) -> str:
+    def to_string(self) -> str:
         """
         Metodo para imprimir los valores de la clase
 

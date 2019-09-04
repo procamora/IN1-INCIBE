@@ -23,13 +23,13 @@ class Parser(object):
     Clase Parser encargada de parsear los ficheros de log
     """
 
-    def __init__(self, logger: logging, output: str, workingDir: str, myConfig: str) -> NoReturn:
+    def __init__(self, logger: logging, output: str, working_dir: str, my_config: str) -> NoReturn:
         """
         Constructor de clase
 
         :param logger: Instancia de logging
         :param output: Directorio donde se guardan los ficheros de salida
-        :param workingDir: Directorio donde se encuentran los log a analizar
+        :param working_dir: Directorio donde se encuentran los log a analizar
         """
         config = configparser.ConfigParser()
         config.sections()
@@ -38,23 +38,23 @@ class Parser(object):
         check_dir(output)
 
         self._logger = logger
-        self._logCompleted = '{}/{}'.format(output, config[myConfig]['FILE_LOG_COMPLETED'])
-        self._logAuxSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_SESSION'])
-        self._logAuxNoSession = '{}/{}'.format(output, config[myConfig]['FILE_LOG_NOSESSION'])
-        self._geoip2DB = None
-        self._workingDir = workingDir
+        self._log_completed = '{}/{}'.format(output, config[my_config]['FILE_LOG_COMPLETED'])
+        self._log_aux_session = '{}/{}'.format(output, config[my_config]['FILE_LOG_SESSION'])
+        self._log_aux_no_session = '{}/{}'.format(output, config[my_config]['FILE_LOG_NOSESSION'])
+        self._geoip2_db = None
+        self._working_dir = working_dir
 
-        self._connectionWget = list()  # conexiones que han ejecutado un wget y hay que enlazarlo con la respuesta
+        self._connection_wget = list()  # conexiones que han ejecutado un wget y hay que enlazarlo con la respuesta
         self._listCommandWget = list()  # Comandos wget ejecutados
 
         # Creamos el fichero con los insert y si existe lo vacia
-        with open(self._logCompleted, 'w'):
+        with open(self._log_completed, 'w'):
             pass
         # Creamos el fichero con los insert y si existe lo vacia
-        with open(self._logAuxSession, 'w'):
+        with open(self._log_aux_session, 'w'):
             pass
         # Creamos el fichero con los insert y si existe lo vacia
-        with open(self._logAuxNoSession, 'w'):
+        with open(self._log_aux_no_session, 'w'):
             pass
 
     def parse(self, db: str) -> NoReturn:
@@ -64,20 +64,20 @@ class Parser(object):
         :return:
         """
 
-        self._geoip2DB = geoip2.database.Reader(db)
+        self._geoip2_db = geoip2.database.Reader(db)
         startTotal = timer()
-        for fname in sorted(glob.glob('{}/cowrie.log.*'.format(self._workingDir))):
+        for fname in sorted(glob.glob('{}/cowrie.log.*'.format(self._working_dir))):
             # for fname in sorted(glob.glob('{}/analizame.log'.format(self._workingDir))):
             self._logger.info('Analizando: {}'.format(fname))
 
-            self._connectionWget.clear()  # Vaciamos la lista/diccionario porque no tiene informacion util en otro log
+            self._connection_wget.clear()  # Vaciamos la lista/diccionario porque no tiene informacion util en otro log
             self._listCommandWget.clear()
 
             # start = timer()
             try:
-                connectionAuxDict = Parser.getConnections(fname)
-                newConnectionDict = self.setIPtoID(connectionAuxDict, fname)
-                self.getInfoLog(newConnectionDict, fname)
+                connectionAuxDict = Parser.get_connections(fname)
+                newConnectionDict = self.set_ip_to_id(connectionAuxDict, fname)
+                self.get_info_log(newConnectionDict, fname)
             except UnicodeDecodeError as error:
                 self._logger.error('Unicode decode error in file: {}'.format(fname))
                 self._logger.debug(traceback.print_tb(error.__traceback__))
@@ -86,10 +86,10 @@ class Parser(object):
 
         endTotal = timer()
         self._logger.info('Time total: {} seg'.format(endTotal - startTotal))  # Time in seconds, e.g. 5.38091952400282
-        self._geoip2DB.close()
+        self._geoip2_db.close()
 
     @staticmethod
-    def getConnections(fname: str) -> Dict[int, ConnectionAux]:
+    def get_connections(fname: str) -> Dict[int, ConnectionAux]:
         """
         Metodo inicial que busca todas las New Connection que hay en el fichero y las asocia a la linea en la que estan
 
@@ -107,7 +107,7 @@ class Parser(object):
 
         return connectionAuxDict
 
-    def setIPtoID(self, connectionAuxDict: dict, fname: str) -> Dict[str, NewConnection]:
+    def set_ip_to_id(self, connectionAuxDict: dict, fname: str) -> Dict[str, NewConnection]:
         """
         Asociamos una IP a su ID que lo identificara en cada una de las lineas del log [HoneyPotSSHTransport,id,ip]
         Devolvemos una lista de conexiones con la informacion que necesitamos para obtener el resto de datos
@@ -136,26 +136,26 @@ class Parser(object):
                 valid = False
 
             # Avanzamos las lineas necesarias hasta tener una linea con la ip de la conexion
-            while valid and not re.match(r'.*,\d+,{}'.format(connectionAuxDict[connection].getIp()), s, re.IGNORECASE):
+            while valid and not re.match(r'.*,\d+,{}'.format(connectionAuxDict[connection].get_ip()), s, re.IGNORECASE):
                 cont += 1
                 if cont < fileSize:
                     s = file[cont]
                 else:
                     self._logger.warning(
-                        'No puedo con: {} en linea: {}'.format(connectionAuxDict[connection].getIp(), connection))
+                        'No puedo con: {} en linea: {}'.format(connectionAuxDict[connection].get_ip(), connection))
                     valid = False
 
             if valid:
-                connectionAuxDict[connection].setId(parser_id_to_session(s))  # Establecemos el id de la conexion
-                if connectionAuxDict[connection].getId() in newConnectionDict:
+                connectionAuxDict[connection].set_id(parser_id_to_session(s))  # Establecemos el id de la conexion
+                if connectionAuxDict[connection].get_id() in newConnectionDict:
                     pass  # Posteriores conexiones con la misma id,ip los omitimos porque iran al objeto ya creado
                 else:
-                    newConnectionDict[connectionAuxDict[connection].getId()] = NewConnection(
-                        connectionAuxDict[connection], self._logger, self._geoip2DB)
+                    newConnectionDict[connectionAuxDict[connection].get_id()] = NewConnection(
+                        connectionAuxDict[connection], self._logger, self._geoip2_db)
 
         return newConnectionDict
 
-    def getInfoLog(self, newConnectionDict: dict, fname: str) -> NoReturn:
+    def get_info_log(self, newConnectionDict: dict, fname: str) -> NoReturn:
         """
         Metodo que recorre el fichero linea a linea y si existe el indice id,ip en el diccionario obtiene ek objeto
         asociado a ese indice y le añade esa linea, que solo guardara si tiene informacion util
@@ -170,14 +170,14 @@ class Parser(object):
                 info = parser_id_ip(line)
                 if info is not None:
                     if info in newConnectionDict:  # Las lineas que tenemos en el diccionario las parseamos
-                        newConnectionDict[info].addLine(line)
+                        newConnectionDict[info].add_line(line)
                         if re.match(r'.*CMD:.*wget.*', line, re.IGNORECASE):
-                            self._connectionWget.append(info)  # si la linea contiene un wget guardo esa conexion
+                            self._connection_wget.append(info)  # si la linea contiene un wget guardo esa conexion
                     else:  # Lineas con id,ip pero que no tienen New connection y no estan en el diccionario
                         conAux = ConnectionAux(parser_ip_any_line(line), '', '')
-                        conAux.setId(parser_id_to_session(line))
-                        newConnectionDict[info] = NewConnection(conAux, self._logger, self._geoip2DB)
-                        newConnectionDict[info].addLine(line)
+                        conAux.set_id(parser_id_to_session(line))
+                        newConnectionDict[info] = NewConnection(conAux, self._logger, self._geoip2_db)
+                        newConnectionDict[info].add_line(line)
                 else:  # Lineas que no tienen id,ip
                     # Añadimos al fichero auxiliar de lineas no tratadas todas las lineas que no tengan la id,ip en el
                     # el diccionario y que no sean una New connection ya que estan ya han sido tratadas
@@ -188,39 +188,39 @@ class Parser(object):
                             download = Download(d.group(1), d.group(2), d.group(3), parser_date_time(line))
                             self._listCommandWget.append(download)
 
-        self.updateCommandConnection(newConnectionDict)
+        self.update_command_connection(newConnectionDict)
 
         for conect in newConnectionDict.values():
             if conect.isCompleted():
-                write_file(conect.getJSON(), self._logCompleted, 'a')
+                write_file(conect.get_json(), self._log_completed, 'a')
             elif conect.isSession():
-                write_file(conect.getJSON(), self._logAuxSession, 'a')
+                write_file(conect.get_json(), self._log_aux_session, 'a')
             else:
-                write_file(conect.getJSON(), self._logAuxNoSession, 'a')
+                write_file(conect.get_json(), self._log_aux_no_session, 'a')
 
-    def searchWget(self, newConnectionDict: dict, command: Download) -> NoReturn:
+    def search_wget(self, new_connection_dict: dict, command: Download) -> NoReturn:
         """
         Metodo que recorre la lista de conexiones que han ejecutado un comand wget, si el comando corresponde con
         el que estamos tratando le actualiza los valores y lo borra de la lista
 
-        :param newConnectionDict:
+        :param new_connection_dict:
         :param command:
         :return:
         """
-        for connection in self._connectionWget:
-            if newConnectionDict[connection].checkCommandPending(command):
-                self._connectionWget.remove(connection)
+        for connection in self._connection_wget:
+            if new_connection_dict[connection].check_command_pending(command):
+                self._connection_wget.remove(connection)
                 return
 
-    def updateCommandConnection(self, newConnectionDict: dict) -> NoReturn:
+    def update_command_connection(self, new_connection_dict: dict) -> NoReturn:
         """
         Metodo que recorre todos los comandos  wget ejecutados para comprobar si en el diccionario de conexiones se ha
         ejecutado
 
-        :param newConnectionDict:
+        :param new_connection_dict:
         :return:
         """
         # Aqui tenemos que recorrer cada comando y comprobar si tiene una wget pendiente de obtener un valor
         for command in self._listCommandWget:
             # self._logger.info(command.toString())
-            self.searchWget(newConnectionDict, command)
+            self.search_wget(new_connection_dict, command)

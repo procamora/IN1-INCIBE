@@ -39,16 +39,16 @@ class TableInput(Table):
         """
         return self._input
 
-    def load(self, timestamp, myInput) -> NoReturn:
+    def load(self, timestamp, my_input) -> NoReturn:
         """
         Metedo que carga los principales valores de la tabla
 
         :param timestamp:
-        :param myInput:
+        :param my_input:
         :return:
         """
         self._timestamp = timestamp
-        self._input = myInput
+        self._input = my_input
 
     def __getstate__(self) -> Dict[str, Any]:
         """
@@ -59,7 +59,7 @@ class TableInput(Table):
         return {'timestamp': self._timestamp, 'success': self._success, 'input': self._input,
                 'eventid': 'cowrie.command.input'}
 
-    def isValid(self) -> bool:
+    def is_valid(self) -> bool:
         """
         Metodo que indica si esa clase es valida para generar el INSERT INTO, una clase es valida
         cuando ciertos atributos de la clase existen y no estan vacios
