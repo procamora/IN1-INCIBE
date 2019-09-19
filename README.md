@@ -215,11 +215,11 @@ su correcto funcionamiento en posteriores actualizaciones del programa.\
 El programa ha sido testeado con los siguientes Sistemas Operativos y
 versiones de Python:
 
-       SO          Python
-  ------------ --------------
-   Fedora 29    Python 3.6.8
-   Windows 10       asd
-
+    |   SO     |     Python
+  ------------ |--------------
+   Fedora 29   | Python 3.7
+   Windows 10   |    Python 3.7
+   Mac OS   |    Python 3.7
 
 
 
